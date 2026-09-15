@@ -2,11 +2,12 @@ package analysers
 
 import (
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
-	"github.com/sombrahq/sombra-cli/internal/core/usecases"
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
 	"path/filepath"
+
+	"github.com/google/uuid"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/usecases"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
 )
 
 type licenseAnalyser struct {
@@ -58,7 +59,7 @@ func newLicenseAnalyser(baseDir, fn string) (usecases.LocalFileAnalyserPort, err
 	return &licenseAnalyser{BaseDir: baseDir, Fn: fn}, nil
 }
 
-func acceptLicenseFile(baseDir, fn string) bool {
+func acceptLicenseFile(_, fn string) bool {
 	filename := filepath.Base(fn)
 	return filename == "LICENSE"
 }

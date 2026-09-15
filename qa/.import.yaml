@@ -12,8 +12,8 @@ imports-checks:
           - github.com/alexflint/go-arg
 
           # sombra
-          - github.com/sombrahq/sombra-cli/internal/runtime
-          - github.com/sombrahq/sombra-cli/internal/frameworks/logger
+          - github.com/yunier-rojas/sombra-cli/internal/runtime
+          - github.com/yunier-rojas/sombra-cli/internal/frameworks/logger
 
 
   - folder: internal/core/entities
@@ -42,9 +42,11 @@ imports-checks:
           - regexp
 
           # sombra
-          - github.com/sombrahq/sombra-cli/internal/core/entities
+          - github.com/yunier-rojas/sombra-cli/internal/core/entities
 
   - folder: internal/frameworks/*
+    exclude:
+      - ".*_test\\.go"
     rules:
       - allow:
           # stdlib
@@ -61,6 +63,8 @@ imports-checks:
           - time
           - io
           - text/template
+          - encoding/json
+          - strconv
 
           # 3rd party
           - github.com/bmatcuk/doublestar/v4
@@ -72,12 +76,12 @@ imports-checks:
           - github.com/Masterminds/semver/v3
 
           # sombra
-          - github.com/sombrahq/sombra-cli/internal/core/entities
-          - github.com/sombrahq/sombra-cli/internal/core/usecases
+          - github.com/yunier-rojas/sombra-cli/internal/core/entities
+          - github.com/yunier-rojas/sombra-cli/internal/core/usecases
           # the only packages allowed to import from framework packages
-          - github.com/sombrahq/sombra-cli/internal/frameworks/logger
+          - github.com/yunier-rojas/sombra-cli/internal/frameworks/logger
           # CVS Service must import specific ones
-          - github.com/sombrahq/sombra-cli/internal/frameworks/cvs/*
+          - github.com/yunier-rojas/sombra-cli/internal/frameworks/cvs/*
 
 
 
@@ -96,21 +100,23 @@ imports-checks:
           - github.com/google/uuid
 
           # sombra
-          - github.com/sombrahq/sombra-cli/internal/core/entities
-          - github.com/sombrahq/sombra-cli/internal/core/usecases
-          - github.com/sombrahq/sombra-cli/internal/frameworks/logger
+          - github.com/yunier-rojas/sombra-cli/internal/core/entities
+          - github.com/yunier-rojas/sombra-cli/internal/core/usecases
+          - github.com/yunier-rojas/sombra-cli/internal/frameworks/logger
 
 
   - folder: internal/runtime
+    exclude:
+      - ".*_test\\.go"
     rules:
       - allow:
           # stdlib
           - fmt
 
           # 3rd party
-
+          - go.uber.org/dig
 
           # sombra
-          - github.com/sombrahq/sombra-cli/internal/core/entities
-          - github.com/sombrahq/sombra-cli/internal/core/usecases
-          - github.com/sombrahq/sombra-cli/internal/frameworks/*
+          - github.com/yunier-rojas/sombra-cli/internal/core/entities
+          - github.com/yunier-rojas/sombra-cli/internal/core/usecases
+          - github.com/yunier-rojas/sombra-cli/internal/frameworks/*

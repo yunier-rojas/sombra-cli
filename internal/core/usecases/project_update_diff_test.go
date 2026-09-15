@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 	"go.uber.org/mock/gomock"
 )
 
@@ -1263,7 +1263,7 @@ func TestDirectoryLocalDiffInteractor_LocalUpdate(t *testing.T) {
 			)
 
 			// Execute
-			err := interactor.LocalUpdate(tt.target, tt.uri, tt.tag)
+			_, err := interactor.LocalUpdate(tt.target, tt.uri, tt.tag, false)
 
 			// Check error
 			if (err != nil) != tt.shouldError {

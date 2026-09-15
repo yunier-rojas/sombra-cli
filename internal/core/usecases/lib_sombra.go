@@ -1,6 +1,6 @@
 package usecases
 
-import "github.com/sombrahq/sombra-cli/internal/core/entities"
+import "github.com/yunier-rojas/sombra-cli/internal/core/entities"
 
 type SombraDefManagerPort interface {
 	GetFile(dir string) entities.File

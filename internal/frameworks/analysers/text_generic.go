@@ -2,9 +2,9 @@ package analysers
 
 import (
 	"bufio"
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
-	"github.com/sombrahq/sombra-cli/internal/core/usecases"
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/usecases"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -49,7 +49,7 @@ func (t *textGeneric) Load() error {
 		logger.Error("Failed to open the file", err)
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Regular expression to identify email addresses
 	emailRegexPattern := `\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b`

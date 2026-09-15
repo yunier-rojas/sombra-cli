@@ -1,9 +1,9 @@
 package cvs
 
 import (
-	"github.com/sombrahq/sombra-cli/internal/core/usecases"
-	"github.com/sombrahq/sombra-cli/internal/frameworks/cvs/git"
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/core/usecases"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/cvs/git"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
 )
 
 type RegistryType map[string]usecases.RepositoryFactory

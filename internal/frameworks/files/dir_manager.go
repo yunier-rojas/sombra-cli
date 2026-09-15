@@ -2,9 +2,9 @@ package files
 
 import (
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
-	"github.com/sombrahq/sombra-cli/internal/core/usecases"
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/usecases"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
 	"os"
 	"path/filepath"
 	"strings"

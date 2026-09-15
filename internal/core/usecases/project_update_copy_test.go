@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 	"go.uber.org/mock/gomock"
 )
 
@@ -200,8 +200,8 @@ func TestLocalCopyInteractor_LocalUpdate(t *testing.T) {
 
 						newContent := []byte("package main\n\nfunc main() {\n  // test-project\n}\n")
 						mockSombraEngine.EXPECT().
-							NewContent(fileContent, mapResult.Content).
-							Return(newContent)
+							TransformFile(fileContent, mapResult.Content, gomock.Any(), false).
+							Return(newContent, nil)
 
 						mockFileManager.EXPECT().
 							Write(filepath.Join("/path/to/project", "src"), newFile, newContent).
@@ -375,8 +375,8 @@ func TestLocalCopyInteractor_LocalUpdate(t *testing.T) {
 
 				newContent := []byte("package main\n\nfunc main() {\n  // test-project\n}\n")
 				mockSombraEngine.EXPECT().
-					NewContent(fileContent, mapResult.Content).
-					Return(newContent)
+					TransformFile(fileContent, mapResult.Content, gomock.Any(), false).
+					Return(newContent, nil)
 
 				mockFileManager.EXPECT().
 					Write(filepath.Join("/path/to/project", "src"), newFile, newContent).
@@ -1154,8 +1154,8 @@ func TestLocalCopyInteractor_LocalUpdate(t *testing.T) {
 
 				newContent := []byte("package main\n\nfunc main() {\n  // test-project\n}\n")
 				mockSombraEngine.EXPECT().
-					NewContent(fileContent, mapResult.Content).
-					Return(newContent)
+					TransformFile(fileContent, mapResult.Content, gomock.Any(), false).
+					Return(newContent, nil)
 
 				// File write error
 				mockFileManager.EXPECT().
@@ -1189,7 +1189,7 @@ func TestLocalCopyInteractor_LocalUpdate(t *testing.T) {
 			)
 
 			// Execute
-			err := interactor.LocalUpdate(tt.target, tt.uri, tt.tag)
+			_, err := interactor.LocalUpdate(tt.target, tt.uri, tt.tag, false)
 
 			// Check error
 			if (err != nil) != tt.shouldError {

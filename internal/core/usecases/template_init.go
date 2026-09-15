@@ -1,7 +1,7 @@
 package usecases
 
 import (
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 	"sort"
 )
 
@@ -70,9 +70,7 @@ func (l *DirectoryTemplateInitInteractor) buildTemplate(strings []string, files 
 	// Create a new slice to store the combined patterns
 	combinedPatterns := make([]*entities.Pattern, 0)
 
-	for _, filePattern := range files {
-		combinedPatterns = append(combinedPatterns, filePattern)
-	}
+	combinedPatterns = append(combinedPatterns, files...)
 
 	// Initialize the template definition
 	template := &entities.TemplateDef{
@@ -112,7 +110,6 @@ func (l *DirectoryTemplateInitInteractor) extractAbstractMappings(files []LocalF
 // unifyAbstractMappings consolidates and unifies abstract mapping candidates
 func (l *DirectoryTemplateInitInteractor) unifyAbstractMappings(candidates []*entities.AbstractMappingCandidate, exclude []entities.Wildcard) []*entities.Pattern {
 	varMap := make(map[string]*entities.AbstractMappingCandidate)
-	vars := []string{}
 
 	for _, candidate := range candidates {
 		name := candidate.Name
@@ -120,9 +117,6 @@ func (l *DirectoryTemplateInitInteractor) unifyAbstractMappings(candidates []*en
 
 		if !found || (candidate.Priority > winner.Priority) {
 			varMap[name] = candidate
-			if !found {
-				vars = append(vars, name)
-			}
 		}
 	}
 
@@ -266,7 +260,6 @@ func (l *DirectoryTemplateInitInteractor) removeMappings(target, reference entit
 }
 
 func (l *DirectoryTemplateInitInteractor) combinePatterns(patterns []*entities.Pattern) ([]*entities.Pattern, error) {
-	res := make([]*entities.Pattern, 0)
 	unified := make(map[entities.Wildcard]map[bool]*entities.Pattern)
 
 	for _, pattern := range patterns {
@@ -285,7 +278,7 @@ func (l *DirectoryTemplateInitInteractor) combinePatterns(patterns []*entities.P
 		l.combineMappings(patternAbstract, pattern)
 	}
 
-	res = make([]*entities.Pattern, 0)
+	res := make([]*entities.Pattern, 0)
 	for _, patternMap := range unified {
 		for _, pattern := range patternMap {
 			res = append(res, pattern)
@@ -345,7 +338,7 @@ func (l *DirectoryTemplateInitInteractor) isRelevantPattern(pattern *entities.Pa
 	if len(pattern.Except) != 0 {
 		return true
 	}
-	return pattern.Verbatim || pattern.CopyOnly || pattern.Abstract
+	return pattern.Verbatim || pattern.CopyOnly || pattern.Abstract || pattern.Replace != ""
 }
 
 func (l *DirectoryTemplateInitInteractor) combineMappings(target, source *entities.Pattern) {
@@ -374,6 +367,9 @@ func (l *DirectoryTemplateInitInteractor) combineMappings(target, source *entiti
 		target.Content[k] = v
 	}
 	target.Except = append(target.Except, source.Except...)
+	if target.Replace == "" {
+		target.Replace = source.Replace
+	}
 	target.Verbatim = target.Verbatim || source.Verbatim
 	target.CopyOnly = target.CopyOnly || source.CopyOnly
 	target.Abstract = target.Abstract || source.Abstract

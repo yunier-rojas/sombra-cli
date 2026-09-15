@@ -12,7 +12,7 @@ package usecases
 import (
 	reflect "reflect"
 
-	entities "github.com/sombrahq/sombra-cli/internal/core/entities"
+	entities "github.com/yunier-rojas/sombra-cli/internal/core/entities"
 	gomock "go.uber.org/mock/gomock"
 )
 

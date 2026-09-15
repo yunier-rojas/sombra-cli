@@ -4,7 +4,10 @@ title: Start a Template
 
 ## Overview
 
-This guide walks you through creating a Sombra template from an existing codebase — no changes to the source code required.
+This guide walks you through creating a Sombra template from an existing codebase — no
+changes to the source code required. The worked example is Sombra's own definition:
+[`.sombra/default.yaml`](https://github.com/yunier-rojas/sombra-cli/blob/main/.sombra/default.yaml)
+in this repository, which turns the CLI into a reusable Go project skeleton.
 
 Use this when you want to:
 
@@ -14,103 +17,213 @@ Use this when you want to:
 
 ---
 
-## Example: Fork the Hextra Starter Template
+## The example
 
-We'll use [imfing/hextra-starter-template](https://github.com/imfing/hextra-starter-template) as the source project.
+`sombra-cli` is a Go CLI. Its template copies a curated set of files — the CLI entry
+point, the composition root, the domain entities, the logger and the build / docs / CI /
+QA scaffolding — into a new project and renames the module, commands and identifiers
+along the way. The product's business logic and the rest of the frameworks are left out
+on purpose, so the result is a lean structure to build on rather than a project that
+compiles as-is.
 
-### Step 1: Fork the Project
-
-Fork the repository to your own GitHub org/account.
-
-> ✅ Tip: You can use private repos for internal templates.
+Every step below is taken from that file.
 
 ---
 
-### Step 2: Create the `.sombra/` Directory
+## Step 1: Create `.sombra/default.yaml`
 
-In the root of your forked project, create a directory named `.sombra` and add a `default.yaml` inside it:
+Add the definition at the root of the repository you want to reuse:
 
-```
-
+```text
 .
 └── .sombra/
-└── default.yaml
+    └── default.yaml
+```
 
-````
-
-This file defines how the template will transform content.
+Everything inside `.sombra/` is treated as template metadata: it is never copied to the
+target project and can hold reference material for the template itself.
 
 ---
 
-### Step 3: Define Your Template
+## Step 2: Declare the variables
 
-Here’s a minimal `default.yaml` example:
+Variables are the questions `sombra local init` asks. Here the answers are the new
+project's identity plus three switches that enable optional components:
 
 ```yaml
 vars:
+  - project
+  - module
   - repository
-  - title
+  - author
+  - include_ci
+  - include_docs
+  - include_qa
+```
 
-patterns:
-  - pattern: "*"
-    abstract: true
-    default:
-      imfing/hextra-starter-template: "{{ .repository }}"
-      My Site: "{{ .title }}"
-      Hextra Starter Template: "{{ .title }}"
-
-  - pattern: LICENSE
-    path:
-      "/": "vendors"
-    name:
-      LICENSE: hextra-starter-template.LICENSE
-    verbatim: true
-````
-
-This configuration:
-
-* Replaces the repo name and title
-* Copies `LICENSE` into a `vendors/` folder without modification
+The values are stored in the target project's `sombra.yaml` and reused on every update,
+so consumers only answer once.
 
 ---
 
-### Step 4: Expand the Pattern List
+## Step 3: Apply global renames with an abstract pattern
 
-You can match specific files or folders like so:
+An `abstract: true` pattern contributes mappings to every file it matches but never
+includes a file on its own. This one turns the template's own names into the consumer's:
 
 ```yaml
 patterns:
-  - pattern: README.md
-    content:
-      https://imfing.github.io/hextra-starter-template/: "{{ .demo }}"
-
-  - pattern: .devcontainer/*
-  - pattern: .github/**/*
-
-  - pattern: content/**/*.md
-  - pattern: hugo.yaml
+  - pattern: "/**/*"
+    abstract: true
+    default:
+      "github.com/yunier-rojas/sombra-cli": "{{ .module }}"
+      "yunier-rojas/sombra-cli": "{{ .repository }}"
+      "sombra-cli": "{{ .project }}"
+      "Yunier Rojas García": "{{ .author }}"
+      "Yunier": "{{ .author }}"
+      "word:sombra": "{{ .project }}"
 ```
 
-Use globs like `**/*` to match recursively.
+`word:` only matches whole tokens, so `sombra-cli` and `sombra.yaml` are left for the
+longer, more specific keys instead of being mangled by the generic `sombra` rule.
 
 ---
 
-### Step 5: Tag a Release
+## Step 4: Copy the Go skeleton
 
-To make your template available for versioned use:
+The Go files are the heart of the template. Each pattern renames its file or the
+identifiers inside it:
+
+```yaml
+  - pattern: "/cmd/sombra/main.go"
+    copy_only: true
+    content:
+      "Local": "Greet"
+      "subcommand:local": "subcommand:greet"
+    block_directives: true
+
+  - pattern: "/cmd/sombra/cmd_local_init.go"
+    copy_only: true
+    name:
+      "cmd_local_init.go": "cmd_greeter.go"
+    content:
+      "LocalInit": "Greeter"
+      "args.Template": "args.Say"
+    block_directives: true
+```
+
+`copy_only: true` ties the pattern to the **copy** update method: the skeleton is
+seeded by `sombra local update --method copy` (the default) and ignored by
+`--method diff`, so routine updates never overwrite code the consumer has edited. See
+[`copy_only`](concepts.md#copy_only-copy-method-only-patterns).
+
+---
+
+## Step 5: Hide template-only content
+
+The source repository contains code that only exists to make it a working project.
+Wrap those regions with `sombra:skip` / `sombra:end` markers and enable the block on
+the owning pattern:
+
+```yaml
+  - pattern: "/cmd/sombra/main.go"
+    block_directives: true
+```
+
+```go
+var args struct {
+	Local *LocalSubcommand `arg:"subcommand:local"`
+	// sombra:skip
+	Template *TemplateSubcommand `arg:"subcommand:template"`
+	// sombra:end
+}
+```
+
+Here the generated project keeps the `local` command but never exposes the
+template-management command. The markers and every line between them are removed when
+the file is copied. Markers can nest, and block directives are opt-in per pattern so
+ordinary `sombra:` text is copied untouched. See
+[In-file Block Directives](concepts.md#in-file-block-directives).
+
+---
+
+## Step 6: Add scaffolding and optional components
+
+Everything else is declared the same way. The build and repository files are copied as
+they are, with the project name substituted where it appears:
+
+```yaml
+  - pattern: "/Makefile"
+    content:
+      "word:sombra": "{{ .project }}"
+
+  - pattern: "/.editorconfig"
+  - pattern: "/.gitignore"
+  - pattern: "/LICENSE"
+```
+
+Optional components are gated with `when`, a Go template expression evaluated against
+the variables before the definition is parsed:
+
+```yaml
+  - pattern: "/.github/**"
+    when: '{{ eq .include_ci "true" }}'
+    content:
+      "word-ci:sombra": "{{ .project }}"
+      "sombra-": "{{ .project }}-"
+
+  - pattern: "/docs/**"
+    abstract: true
+    when: '{{ eq .include_docs "true" }}'
+
+  - pattern: "/mk/qa.mk"
+    when: '{{ eq .include_qa "true" }}'
+```
+
+When the expression is false the pattern is skipped entirely, so optional trees such as
+`.github/`, `docs/` and `qa/` need no `except` denylist. See
+[`when`](concepts.md#when-conditional-patterns) and the full
+[Pattern Field Reference](concepts.md#pattern-field-reference).
+
+---
+
+## Step 7: Tag a release
+
+To make the template available for versioned use:
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-Consumers can now use your template with:
+---
+
+## Using the template
+
+Consumers register it and answer the variables:
+
+```bash
+sombra local init github.com/yunier-rojas/sombra-cli
+```
+
+That records them in the target project's `sombra.yaml`:
 
 ```yaml
-branch: v1.0.0
 templates:
-  - name: your-org/your-template
+  - uri: github.com/yunier-rojas/sombra-cli
+    vars:
+      project: hello-cli
+      module: github.com/acme/hello-cli
+      repository: acme/hello-cli
+      author: Acme Inc.
+      include_ci: "true"
+      include_docs: "false"
+      include_qa: "false"
 ```
+
+Running `sombra local update github.com/yunier-rojas/sombra-cli` then copies the files and
+records the applied tag in `current`. Because the Go skeleton is `copy_only`, the first
+`--method copy` seeds it and later `--method diff` updates everything else.
 
 ---
 
@@ -118,11 +231,12 @@ templates:
 
 To convert any repo into a Sombra template:
 
-1. Fork the project
-2. Add `.sombra/default.yaml`
-3. Define transformation patterns
-4. Tag a release
-5. Use it in a target repo with `sombra.yaml`
+1. Add `.sombra/default.yaml`
+2. Declare `vars` for the consumer to answer
+3. Rename globally with an `abstract` pattern
+4. Mark seed-once files `copy_only` and map their `name` / `content`
+5. Hide template-only code with `sombra:skip` block directives
+6. Gate optional components with `when`
+7. Tag a release and consume it with `sombra local init`
 
 Next: learn about [Template Concepts](concepts.md) to understand pattern structure in depth.
-

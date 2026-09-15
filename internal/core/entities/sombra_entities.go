@@ -1,12 +1,21 @@
 package entities
 
+// sombra:skip
+
+import "strings"
+
+// sombra:end
+
+type File string
+
+// sombra:skip
+
 type RepoUpdateInfo struct {
 	Branch         string
 	CurrentVersion string
 }
 
 // File is the relative path of a file in the base directory.
-type File string
 
 type FileScanResult struct {
 	// File is the relative path without the initial "/"
@@ -52,15 +61,43 @@ type TemplateConfig struct {
 }
 
 type Pattern struct {
-	Pattern  Wildcard   `yaml:"pattern" validate:"required"`
-	Abstract bool       `yaml:"abstract,omitempty"`
-	CopyOnly bool       `yaml:"copy_only,omitempty"`
-	Verbatim bool       `yaml:"verbatim,omitempty"`
-	Default  Mappings   `yaml:"default,omitempty"`
-	Path     Mappings   `yaml:"path,omitempty"`
-	Name     Mappings   `yaml:"name,omitempty"`
-	Content  Mappings   `yaml:"content,omitempty"`
-	Except   []Wildcard `yaml:"except,omitempty"`
+	Pattern         Wildcard   `yaml:"pattern" validate:"required"`
+	Abstract        bool       `yaml:"abstract,omitempty"`
+	CopyOnly        bool       `yaml:"copy_only,omitempty"`
+	Verbatim        bool       `yaml:"verbatim,omitempty"`
+	BlockDirectives bool       `yaml:"block_directives,omitempty"`
+	Delete          bool       `yaml:"delete,omitempty"`
+	Replace         string     `yaml:"replace,omitempty"`
+	When            *Condition `yaml:"when,omitempty"`
+	Default         Mappings   `yaml:"default,omitempty"`
+	Path            Mappings   `yaml:"path,omitempty"`
+	Name            Mappings   `yaml:"name,omitempty"`
+	Content         Mappings   `yaml:"content,omitempty"`
+	Except          []Wildcard `yaml:"except,omitempty"`
+}
+
+// Condition is the tri-state value behind the `when` pattern field. A nil
+// pointer means "enabled". It decodes leniently: the template definition can be
+// loaded before it is rendered (see `sombra init`), in which case the field
+// still holds a Go-template expression. Such values are treated as enabled;
+// only an explicit falsey value disables the pattern.
+type Condition bool
+
+func (c *Condition) UnmarshalText(text []byte) error {
+	switch strings.ToLower(strings.TrimSpace(string(text))) {
+	case "false", "0", "no", "off":
+		*c = false
+	default:
+		*c = true
+	}
+	return nil
+}
+
+func (c Condition) MarshalText() ([]byte, error) {
+	if c {
+		return []byte("true"), nil
+	}
+	return []byte("false"), nil
 }
 
 type TemplateDef struct {
@@ -78,15 +115,11 @@ type MapItem struct {
 type MapList []MapItem
 
 type MapResult struct {
-	Path    MapList
-	Name    MapList
-	Content MapList
-}
-
-type SombraTemplateUpdateInfo struct {
-	Operation string
-	Template  string
-	Version   string
+	Path            MapList
+	Name            MapList
+	Content         MapList
+	Replace         *string
+	BlockDirectives bool
 }
 
 type SombraUpdateInfo struct {
@@ -97,3 +130,11 @@ type SombraUpdateInfo struct {
 type SombraDef struct {
 	Templates []*TemplateConfig `yaml:"templates" validate:"required"`
 }
+
+type SombraTemplateUpdateInfo struct {
+	Operation string
+	Template  string
+	Version   string
+}
+
+// sombra:end

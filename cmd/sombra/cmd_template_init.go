@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
-	"github.com/sombrahq/sombra-cli/internal/runtime"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/runtime"
 )
 
 type TemplateInitArgs struct {
@@ -12,7 +12,11 @@ type TemplateInitArgs struct {
 }
 
 func (args *TemplateInitArgs) Run() {
-	rt := runtime.NewTemplateRuntime()
+	rt, err := runtime.NewTemplateRuntime()
+	if err != nil {
+		logger.Panic("Failed to create template init runtime")
+		return
+	}
 
 	if args.Exclude == nil {
 		args.Exclude = []string{}
@@ -22,8 +26,9 @@ func (args *TemplateInitArgs) Run() {
 		args.Only = []string{"/**/*"}
 	}
 
-	err := rt.UseCase.DoTemplateInit(args.Dir, args.Only, args.Exclude)
+	err = rt.UseCase.DoTemplateInit(args.Dir, args.Only, args.Exclude)
 	if err != nil {
 		logger.Panic("Failed to init template")
+		return
 	}
 }

@@ -12,7 +12,7 @@ package usecases
 import (
 	reflect "reflect"
 
-	entities "github.com/sombrahq/sombra-cli/internal/core/entities"
+	entities "github.com/yunier-rojas/sombra-cli/internal/core/entities"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -82,6 +82,21 @@ func (m *MockTemplateDefManagerPort) Render(def entities.File, vars entities.Map
 func (mr *MockTemplateDefManagerPortMockRecorder) Render(def, vars any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Render", reflect.TypeOf((*MockTemplateDefManagerPort)(nil).Render), def, vars)
+}
+
+// RenderReplace mocks base method.
+func (m *MockTemplateDefManagerPort) RenderReplace(dir, name string, vars entities.Mappings) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RenderReplace", dir, name, vars)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RenderReplace indicates an expected call of RenderReplace.
+func (mr *MockTemplateDefManagerPortMockRecorder) RenderReplace(dir, name, vars any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenderReplace", reflect.TypeOf((*MockTemplateDefManagerPort)(nil).RenderReplace), dir, name, vars)
 }
 
 // Save mocks base method.

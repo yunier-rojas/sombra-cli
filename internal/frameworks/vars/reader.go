@@ -3,8 +3,8 @@ package vars
 import (
 	"bufio"
 	"fmt"
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
-	"github.com/sombrahq/sombra-cli/internal/core/usecases"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/usecases"
 	"os"
 	"strings"
 )

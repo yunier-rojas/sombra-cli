@@ -1,7 +1,7 @@
 package usecases
 
 import (
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 )
 
 type CliTemplateInitCase interface {

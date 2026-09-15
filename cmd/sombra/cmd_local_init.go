@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
-	"github.com/sombrahq/sombra-cli/internal/runtime"
 	"os"
+
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/runtime"
 )
 
 type LocalInitArgs struct {
@@ -11,14 +12,21 @@ type LocalInitArgs struct {
 }
 
 func (args *LocalInitArgs) Run() {
-	rt := runtime.NewLocalInitRuntime()
+	rt, err := runtime.NewLocalInitRuntime()
+	if err != nil {
+		logger.Panic("Failed to create local init runtime")
+		return
+	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		logger.Panic("What local directory")
+		return
 	}
 
 	err = rt.UseCase.DoLocalInit(cwd, args.Template)
 	if err != nil {
 		logger.Panic("Failed to init local project")
+		return
 	}
 }

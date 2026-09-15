@@ -4,8 +4,7 @@ title: Best Practices
 
 ## Best Practices for Creating Sombra Templates
 
-Creating effective templates with Sombra means writing definitions that are reusable, clear, and easy to maintain over time.  
-Below are best practices we recommend following when designing your `.sombra/default.yaml`.
+Follow these practices when you design a `.sombra/default.yaml`.
 
 ---
 
@@ -32,7 +31,7 @@ Use `abstract: true` patterns to define shared mappings that apply to multiple f
   abstract: true
   default:
     my-app-template: "{{ .project }}"
-````
+```
 
 This centralizes your replacements and avoids repetition.
 
@@ -65,10 +64,14 @@ This improves performance and reduces accidental replacements.
 ### 6. Use Semantic Versioning in Template Repos
 
 Tag your template repositories with semantic version tags (`v1.0.0`, `v1.1.0`, etc.).
-This enables consumers to pin and upgrade templates predictably via:
+This enables consumers to pin and upgrade templates predictably. Consumers select a
+version with `sombra local update --tag v1.0.0` (or fall back to the latest tag), and the
+applied version is recorded in the target's `sombra.yaml`:
 
 ```yaml
-branch: v1.0.0
+templates:
+  - uri: github.com/your-org/your-template
+    current: v1.0.0
 ```
 
 ---
@@ -79,7 +82,7 @@ Use a throwaway repo or directory to validate your template results.
 Run:
 
 ```bash
-sombra local init your/template-repo
+sombra local init github.com/your-org/your-template
 ```
 
 Verify filenames, paths, and content transformations behave as expected before releasing.
@@ -92,6 +95,27 @@ Treat template definition files like infrastructure. Commit changes separately f
 
 ---
 
-These practices help keep templates readable, reusable, and safe to apply at scale.
+### 9. Hide Template-Only Content with Block Directives
+
+A template repository is also a working project, so it often contains content that should
+not be copied into generated projects. Wrap those regions with `sombra:skip` / `sombra:end`
+and enable `block_directives` on the owning pattern instead of deleting the code or
+relying on fragile regexes:
+
+```yaml
+- pattern: "/cmd/sombra/main.go"
+  block_directives: true
+```
+
+```text
+# sombra:skip
+templateOnly := true
+# sombra:end
+```
+
+This keeps the source repository runnable while producing a lean project. The markers
+must be balanced or the copy fails with the offending line number.
+
+---
 
 For hands-on examples, visit [Start a Template](start-a-template.md).

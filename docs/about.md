@@ -4,29 +4,38 @@ type: page
 description: Learn about Yunier and the Sombra project for automating project setup and structure.
 ---
 
+
+[//]: # (sombra:skip)
+
 ## About the Creator
 
-Hi, I’m **Yunier**, a software developer passionate about automation, developer experience, and shipping projects efficiently.  
-Sombra began as a personal side project to solve a recurring pain: starting new projects from scratch — again and again.
+Hi, I’m **Yunier**, a software developer focused on automation and tooling.  
+Sombra started as a side project to avoid setting up the same project by hand.
 
 ## About the Project
 
-**Sombra CLI** is an open-source command-line tool designed to help developers, consultants, and teams standardize and accelerate project creation.  
-It lets you turn existing production-ready code into reusable templates — without changing the original source.
+**Sombra CLI** is an open-source command-line tool that turns existing code into reusable templates.  
+It generates new projects from a template without changing the original repository.
 
-The project started as an internal tool but is now open source (MIT License) and actively evolving.  
-Sombra is ideal for scenarios like:
+The project started as an internal tool and is now open source under the MIT License.  
+Sombra is used to:
 
-- Automating the setup of boilerplate code
-- Managing many similar services (e.g. in microservice architectures)
-- Sharing a consistent base across projects or clients
+- Set up boilerplate code
+- Manage many similar services (for example, in microservice architectures)
+- Share a base across projects or clients
 
 ## Philosophy
 
-Sombra is built around two core ideas:
+Most scaffolding tools keep the template in a separate repository. Files use placeholders and template logic, so the template becomes a second copy of a project that someone maintains by hand. Nothing links it to the real project, so the two diverge over time.
 
-1. **Use what already works** — start from proven codebases, not custom-built templates.
-2. **Automate without intruding** — no runtime dependencies or changes to the production logic.
+Sombra has no separate template. The template is the project itself plus a `.sombra/default.yaml` that records the changes to apply: copy the files, drop what is not needed, and rename what remains. That is the routine developers already follow by hand, written down and versioned.
+
+- The template stays current because it is the production code.
+- The source repository keeps working; nothing is rewritten for the template.
+- Sombra renames and removes. It does not create files that are absent from the repository, so conditional file sets and per-variable loops are out of scope.
+
+
+[//]: # (sombra:end)
 
 ## Want to Learn More?
 
