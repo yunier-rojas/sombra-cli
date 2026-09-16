@@ -55,4 +55,4 @@ jobs:
           python-version: ${{ env.PY_VERSION }}
 
       - name: Validate docs
-        run: pip install -r docs/requirements.txt
+        run: make build-docs
