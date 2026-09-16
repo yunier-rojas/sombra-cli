@@ -12,7 +12,7 @@ package usecases
 import (
 	reflect "reflect"
 
-	entities "github.com/sombrahq/sombra-cli/internal/core/entities"
+	entities "github.com/yunier-rojas/sombra-cli/internal/core/entities"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -52,6 +52,21 @@ func (m *MockSombraStringsPort) ProcessContent(content []byte, mapping entities.
 func (mr *MockSombraStringsPortMockRecorder) ProcessContent(content, mapping any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessContent", reflect.TypeOf((*MockSombraStringsPort)(nil).ProcessContent), content, mapping)
+}
+
+// ProcessFile mocks base method.
+func (m *MockSombraStringsPort) ProcessFile(content []byte, mapping entities.MapList, vars entities.Mappings, blockDirectives bool) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessFile", content, mapping, vars, blockDirectives)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProcessFile indicates an expected call of ProcessFile.
+func (mr *MockSombraStringsPortMockRecorder) ProcessFile(content, mapping, vars, blockDirectives any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessFile", reflect.TypeOf((*MockSombraStringsPort)(nil).ProcessFile), content, mapping, vars, blockDirectives)
 }
 
 // ProcessString mocks base method.
@@ -122,6 +137,21 @@ func (mr *MockSombraEngineCaseMockRecorder) Match(file, mappings any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Match", reflect.TypeOf((*MockSombraEngineCase)(nil).Match), file, mappings)
 }
 
+// MatchDelete mocks base method.
+func (m *MockSombraEngineCase) MatchDelete(file entities.File, mappings []*entities.Pattern) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MatchDelete", file, mappings)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MatchDelete indicates an expected call of MatchDelete.
+func (mr *MockSombraEngineCaseMockRecorder) MatchDelete(file, mappings any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchDelete", reflect.TypeOf((*MockSombraEngineCase)(nil).MatchDelete), file, mappings)
+}
+
 // NewContent mocks base method.
 func (m *MockSombraEngineCase) NewContent(content []byte, mappings entities.MapList) []byte {
 	m.ctrl.T.Helper()
@@ -148,4 +178,19 @@ func (m *MockSombraEngineCase) NewFile(file entities.File, paths, names entities
 func (mr *MockSombraEngineCaseMockRecorder) NewFile(file, paths, names any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewFile", reflect.TypeOf((*MockSombraEngineCase)(nil).NewFile), file, paths, names)
+}
+
+// TransformFile mocks base method.
+func (m *MockSombraEngineCase) TransformFile(content []byte, mappings entities.MapList, vars entities.Mappings, blockDirectives bool) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransformFile", content, mappings, vars, blockDirectives)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransformFile indicates an expected call of TransformFile.
+func (mr *MockSombraEngineCaseMockRecorder) TransformFile(content, mappings, vars, blockDirectives any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransformFile", reflect.TypeOf((*MockSombraEngineCase)(nil).TransformFile), content, mappings, vars, blockDirectives)
 }

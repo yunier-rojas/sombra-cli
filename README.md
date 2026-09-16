@@ -25,22 +25,22 @@ Built for developers, consultants, and teams who want to:
 ### Option 1: via Go
 
 ```bash
-go install github.com/sombrahq/sombra-cli/cmd/sombra@latest
+go install github.com/yunier-rojas/sombra-cli/cmd/sombra@latest
 ```
 
 ### Option 2: Prebuilt Binaries
 
-Download from [GitHub Releases](https://github.com/sombrahq/sombra-cli/releases)
+Download from [GitHub Releases](https://github.com/yunier-rojas/sombra-cli/releases)
 
 ### Option 3: Build from source
 
 ```bash
-git clone https://github.com/sombrahq/sombra-cli.git
+git clone https://github.com/yunier-rojas/sombra-cli.git
 cd sombra-cli
 make build WHAT=sombra
 ```
 
-See [Installation Guide](https://sombrahq.github.io/sombra-cli/user-guide/installation.html) for more details.
+See [Installation Guide](https://yunier-rojas.github.io/sombra-cli/user-guide/installation.html) for more details.
 
 ---
 
@@ -56,47 +56,46 @@ sombra template init ./my-app
 
 This creates `.sombra/default.yaml`.
 
-### 2. Apply a Template
+### 2. Register a Template
 
-In a new repo, create a `sombra.yaml`:
+In a new repo, register the template:
+
+```bash
+sombra local init https://github.com/your-org/your-template
+```
+
+This prompts for the variables the template declares and writes `sombra.yaml`:
 
 ```yaml
-branch: main
 templates:
-  - name: https://github.com/your-org/your-template
+  - uri: https://github.com/your-org/your-template
     vars:
       project: New API
 ```
 
-Then run:
+### 3. Apply and Update a Project
 
 ```bash
-sombra local init
-```
-
-### 3. Update a Project
-
-```bash
-sombra local update --tag v1.0.0 --method copy
+sombra local update --tag v1.0.0 --method copy https://github.com/your-org/your-template
 ```
 
 ---
 
 ## 📖 Documentation
 
-Full docs available at 👉 [https://sombrahq.github.io/sombra-cli/](https://sombrahq.github.io/sombra-cli/)
+Full docs available at 👉 [https://yunier-rojas.github.io/sombra-cli/](https://yunier-rojas.github.io/sombra-cli/)
 
 Key topics:
 
-* [Installation](https://sombrahq.github.io/sombra-cli/user-guide/installation.html)
-* [Creating Templates](https://sombrahq.github.io/sombra-cli/sombra-templates/start-a-template.html)
-* [sombra.yaml Config](https://sombrahq.github.io/sombra-cli/user-guide/sombra-file.html)
-* [Command Reference](https://sombrahq.github.io/sombra-cli/user-guide/commands.html)
+* [Installation](https://yunier-rojas.github.io/sombra-cli/user-guide/installation.html)
+* [Creating Templates](https://yunier-rojas.github.io/sombra-cli/sombra-templates/start-a-template.html)
+* [sombra.yaml Config](https://yunier-rojas.github.io/sombra-cli/user-guide/sombra-file.html)
+* [Command Reference](https://yunier-rojas.github.io/sombra-cli/user-guide/commands.html)
 
 ---
 
 ## 🤝 Contributing
 
-Issues and PRs welcome! Start with the [Contact page](https://sombrahq.github.io/sombra-cli/contact.html) or open an [Issue](https://github.com/sombrahq/sombra-cli/issues).
+Issues and PRs welcome! Start with the [Contact page](https://yunier-rojas.github.io/sombra-cli/contact.html) or open an [Issue](https://github.com/yunier-rojas/sombra-cli/issues).
 
 MIT licensed. Made with ❤️ by [@yunier](https://www.linkedin.com/in/yunier-rojas-garc%C3%ADa/)

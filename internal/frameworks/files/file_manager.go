@@ -1,9 +1,9 @@
 package files
 
 import (
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
-	"github.com/sombrahq/sombra-cli/internal/core/usecases"
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/usecases"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
 	"os"
 	"path/filepath"
 )
@@ -55,6 +55,16 @@ func (f *FileManagerService) Write(dir string, fn entities.File, content []byte)
 		return err
 	}
 	logger.Info("File written successfully: " + file)
+	return nil
+}
+
+func (f *FileManagerService) Remove(dir string, fn entities.File) error {
+	file := filepath.Join(dir, string(fn))
+	if err := os.Remove(file); err != nil {
+		logger.Error("error while removing file", err)
+		return err
+	}
+	logger.Info("File removed successfully: " + file)
 	return nil
 }
 

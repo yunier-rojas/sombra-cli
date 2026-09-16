@@ -5,11 +5,11 @@ import (
 )
 
 type LocalUpdateCase interface {
-	LocalUpdate(target, uri, tag string) error
+	LocalUpdate(target, uri, tag string, prune bool) ([]string, error)
 }
 
 type CliUpdateCase interface {
-	DoLocalUpdate(target, uri, tag, method string) error
+	DoLocalUpdate(target, uri, tag, method string, prune bool) ([]string, error)
 }
 
 type CliUpdateInteractor struct {
@@ -17,7 +17,7 @@ type CliUpdateInteractor struct {
 	diffCase LocalUpdateCase
 }
 
-func (l *CliUpdateInteractor) DoLocalUpdate(target, uri, tag, method string) error {
+func (l *CliUpdateInteractor) DoLocalUpdate(target, uri, tag, method string, prune bool) ([]string, error) {
 	var useCase LocalUpdateCase
 	switch method {
 	case "diff":
@@ -25,13 +25,9 @@ func (l *CliUpdateInteractor) DoLocalUpdate(target, uri, tag, method string) err
 	case "copy":
 		useCase = l.copyCase
 	default:
-		return fmt.Errorf("method %s not supported", method)
+		return nil, fmt.Errorf("method %s not supported", method)
 	}
-	err := useCase.LocalUpdate(target, uri, tag)
-	if err != nil {
-		return err
-	}
-	return nil
+	return useCase.LocalUpdate(target, uri, tag, prune)
 }
 
 func NewCliUpdateInteractor(copyCase LocalUpdateCase, diffCase LocalUpdateCase) *CliUpdateInteractor {

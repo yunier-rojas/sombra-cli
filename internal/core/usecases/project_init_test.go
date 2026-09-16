@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 	"go.uber.org/mock/gomock"
 )
 

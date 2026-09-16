@@ -6,7 +6,7 @@ title: Sombra File
 
 The `sombra.yaml` file defines how templates are applied to a project. It lives in the root of a **target repository** — the repo you are creating or updating using a Sombra template.
 
-This file tells `sombra` which template(s) to use, which variables to pass, and which version (branch or tag) to pull.
+This file tells `sombra` which template(s) to use, which variables to pass, and which version (tag) is currently applied.
 
 ---
 
@@ -22,20 +22,21 @@ my-app/
 ├── README.md
 └── ...
 
-````
+```
+
+You normally do not write it by hand: `sombra local init` creates it (or appends to it) and prompts for the variables the template declares.
 
 ---
 
 ## Configuration Reference
 
-
 ### `templates`
 
-List of one or more templates to apply. Each template includes a Git repo name and optional variables.
+List of one or more templates applied to the project. Each entry names a template repository and the variables bound to it.
 
 ```yaml
 templates:
-  - name: cool-org/playground-django-api-template
+  - uri: github.com/your-org/your-template
     vars:
       project: My Awesome Project
       author: Jane Doe
@@ -45,38 +46,46 @@ templates:
 
 #### Fields:
 
-* `name`: The GitHub path to the template repo
+* `uri`: The Git repository URL (or local path) of the template
+* `path`: Optional subdirectory of the target project where the template is applied
+* `current`: The version (Git tag) currently applied; written by the CLI
 * `vars`: Key-value pairs that are injected into the template
+
+`current` is updated automatically when `sombra local update` succeeds. It lets a project record which template version it was generated from.
 
 ---
 
 ## Full Example
 
 ```yaml
-branch: main
-
 templates:
-  - name: sombrahq/playground-django-api-template
+  - uri: github.com/your-org/your-template
+    current: v1.2.0
     vars:
       project: Internal API
       author: Dev Team
       email: dev@example.com
       entity: Config
+  - uri: github.com/your-org/common-ci
+    path: .ci
+    vars:
+      project: Internal API
 ```
 
 ---
 
-Need to apply this file? Use:
+## Creating and Applying the File
+
+Register a template (creates `sombra.yaml` if missing and prompts for its variables):
 
 ```bash
-sombra local init
+sombra local init github.com/your-org/your-template
 ```
 
-Or to update a project:
+Apply or refresh the registered template:
 
 ```bash
-sombra local update
+sombra local update github.com/your-org/your-template
 ```
 
 For more, check out the [CLI Commands](commands.md) or [Installation Guide](installation.md).
-

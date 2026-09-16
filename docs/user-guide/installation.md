@@ -8,12 +8,12 @@ You can install **Sombra CLI** using one of the following methods:
 
 ---
 
-### 🧑‍💻 Option 1: Install via Go
+### Option 1: Install via Go
 
-If you have Go 1.16+ installed, you can use:
+If you have Go 1.26 or later, you can use:
 
 ```bash
-go install github.com/sombrahq/sombra-cli@latest
+go install github.com/yunier-rojas/sombra-cli/cmd/sombra@latest
 ```
 
 > This places the `sombra` binary in `$(go env GOPATH)/bin`.
@@ -25,9 +25,9 @@ export PATH="$(go env GOPATH)/bin:$PATH"
 
 ---
 
-### 📦 Option 2: Download Prebuilt Binaries
+### Option 2: Download Prebuilt Binaries
 
-1. Go to the [GitHub Releases](https://github.com/sombrahq/sombra-cli/releases).
+1. Go to the [GitHub Releases](https://github.com/yunier-rojas/sombra-cli/releases).
 
 2. Download the binary for your platform:
 
@@ -50,12 +50,12 @@ sombra --help
 
 ---
 
-### 🛠 Option 3: Build from Source
+### Option 3: Build from Source
 
 If you prefer to build manually:
 
 ```bash
-git clone https://github.com/sombrahq/sombra-cli.git
+git clone https://github.com/yunier-rojas/sombra-cli.git
 cd sombra-cli
 go mod tidy
 make build WHAT=sombra
@@ -67,9 +67,9 @@ Output is saved in the `build/` directory.
 
 ## Requirements
 
-* Go **1.23+**
-* Unix-like shell or terminal (Linux, macOS, or Windows PowerShell)
+* Go **1.26+**
+* A shell or terminal (Linux, macOS, or Windows PowerShell)
 
 ---
 
-Need help? Open an [issue](https://github.com/sombrahq/sombra-cli/issues) or [contact me](../contact.md).
+Need help? Open an [issue](https://github.com/yunier-rojas/sombra-cli/issues) or [contact me](../contact.md).

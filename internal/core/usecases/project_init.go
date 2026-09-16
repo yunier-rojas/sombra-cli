@@ -1,15 +1,21 @@
 package usecases
 
+// sombra:skip
+
 import (
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 )
 
-type VariableReaderPort interface {
-	GetValues(vars []string) *entities.Mappings
-}
+// sombra:end
 
 type LocalInitCase interface {
 	LocalInit(target, uri string) error
+}
+
+// sombra:skip
+
+type VariableReaderPort interface {
+	GetValues(vars []string) *entities.Mappings
 }
 
 type LocalInitInteractor struct {
@@ -19,27 +25,13 @@ type LocalInitInteractor struct {
 	varsSource         VariableReaderPort
 }
 
-func NewLocalInitInteractor(
-	repoPrepare RepositoryPrepareCase,
-	templateDefManager TemplateDefManagerPort,
-	sombraDefManager SombraDefManagerPort,
-	varsSource VariableReaderPort,
-) *LocalInitInteractor {
-	return &LocalInitInteractor{
-		repoPrepare:        repoPrepare,
-		templateDefManager: templateDefManager,
-		sombraDefManager:   sombraDefManager,
-		varsSource:         varsSource,
-	}
-}
-
 func (l *LocalInitInteractor) LocalInit(target, uri string) error {
 	// Download and prepare the version
 	repo, err := l.repoPrepare.Prepare(uri, "")
 	if err != nil {
 		return err
 	}
-	defer repo.Clean()
+	defer func() { _ = repo.Clean() }()
 
 	// Read the template configuration
 	fn := l.templateDefManager.GetFile(repo.Dir())
@@ -75,3 +67,23 @@ func (l *LocalInitInteractor) LocalInit(target, uri string) error {
 }
 
 var _ LocalInitCase = (*LocalInitInteractor)(nil)
+
+// sombra:end
+
+func NewLocalInitInteractor(
+	// sombra:skip
+	repoPrepare RepositoryPrepareCase,
+	templateDefManager TemplateDefManagerPort,
+	sombraDefManager SombraDefManagerPort,
+	varsSource VariableReaderPort,
+	// sombra:end
+) *LocalInitInteractor {
+	// sombra:skip
+	return &LocalInitInteractor{
+		repoPrepare:        repoPrepare,
+		templateDefManager: templateDefManager,
+		sombraDefManager:   sombraDefManager,
+		varsSource:         varsSource,
+	}
+	// sombra:end
+}

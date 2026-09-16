@@ -3,9 +3,10 @@ package usecases
 import (
 	"bytes"
 	"fmt"
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
 	"path/filepath"
 	"regexp"
+
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 )
 
 type DirectoryLocalDiffInteractor struct {
@@ -41,20 +42,20 @@ func NewDirectoryLocalDiffInteractor(
 	}
 }
 
-func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, uri, tag string) error {
+func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, uri, tag string, prune bool) ([]string, error) {
 	// Read sombra file
 	sombraFile := diff.sombraDefManager.GetFile(target)
 	def, err := diff.sombraDefManager.Load(sombraFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Download and prepare the version
 	repo, err := diff.repoPrepare.Prepare(uri, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer repo.Clean()
+	defer func() { _ = repo.Clean() }()
 
 	// If the tag variable is empty, find the latest tag
 	var version entities.Version
@@ -62,11 +63,11 @@ func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, uri, tag string) e
 	if tag == "" {
 		tags, err = repo.GetTags()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		version, err = diff.versionManager.GetLatest(tags, "*")
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		version = entities.Version(tag)
@@ -77,6 +78,7 @@ func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, uri, tag string) e
 	var sig int8
 	var tpl *entities.TemplateDef
 	var fn entities.File
+	var removed []string
 	for _, template := range def.Templates {
 		if template.URI != uri {
 			continue
@@ -84,7 +86,7 @@ func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, uri, tag string) e
 		if template.Current != "" {
 			sig, err = diff.versionManager.Compare(template.Current, version)
 			if err != nil {
-				return err
+				return removed, err
 			}
 			if sig >= 0 {
 				continue
@@ -95,18 +97,31 @@ func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, uri, tag string) e
 			fromVersion = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 		}
 
+		targetDir := filepath.Join(target, template.Path)
+
 		// Render TemplateConfig Definition using Sombra configuration
 		fn = diff.templateDefManager.GetFile(repo.Dir())
 		tpl, err = diff.templateDefManager.Render(fn, template.Vars)
 		if err != nil {
-			return err
+			return removed, err
 		}
 
+		// `copy_only` patterns are owned by the copy update method; the diff
+		// method must not see them.
+		patterns := withoutCopyOnly(tpl.Patterns)
+
 		// prepare the diff
-		err = diff.applyDiff(repo, filepath.Join(target, template.Path), tpl.Patterns, fromVersion, version)
+		err = diff.applyDiff(repo, targetDir, patterns, fromVersion, version)
 		if err != nil {
-			return err
+			return removed, err
 		}
+
+		// Remove files dropped by the template (tombstones)
+		pruned, err := pruneTarget(diff.scanner, diff.localFiles, diff.engine, targetDir, patterns, prune)
+		if err != nil {
+			return removed, err
+		}
+		removed = append(removed, pruned...)
 
 		// Update the template configuration
 		template.Current = version
@@ -115,10 +130,24 @@ func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, uri, tag string) e
 	// Store sombra file
 	err = diff.sombraDefManager.Save(sombraFile, def)
 	if err != nil {
-		return err
+		return removed, err
 	}
 
-	return nil
+	return removed, nil
+}
+
+// withoutCopyOnly drops patterns marked `copy_only`, which are only applied by
+// the copy update method. Tombstones and abstract bases are kept as-is so the
+// remaining patterns behave exactly as they do on the copy path.
+func withoutCopyOnly(patterns []*entities.Pattern) []*entities.Pattern {
+	filtered := make([]*entities.Pattern, 0, len(patterns))
+	for _, pattern := range patterns {
+		if pattern.CopyOnly {
+			continue
+		}
+		filtered = append(filtered, pattern)
+	}
+	return filtered
 }
 
 func (diff *DirectoryLocalDiffInteractor) applyDiff(repo RepositoryPort, targetDir string, patterns []*entities.Pattern, fromVersion, toVersion entities.Version) error {
@@ -176,7 +205,7 @@ func (diff *DirectoryLocalDiffInteractor) transformPatch(content []byte, pattern
 		}
 
 		// diff heading need to be change based on collected mappings
-		if isMatch && isDiffStart {
+		if (res != nil) && isMatch && isDiffStart {
 			groups := startLine.FindStringSubmatch(strLine)
 			aFile := groups[2]
 			newA := diff.engine.NewFile(entities.File(aFile), res.Path, res.Name)
@@ -186,7 +215,7 @@ func (diff *DirectoryLocalDiffInteractor) transformPatch(content []byte, pattern
 		} else
 
 		// both file names need to be change based on collected mappings
-		if isMatch && len(line) > 5 && (bytes.Equal([]byte("---"), line[:3]) || bytes.Equal([]byte("+++"), line[:3])) {
+		if (res != nil) && isMatch && len(line) > 5 && (bytes.Equal([]byte("---"), line[:3]) || bytes.Equal([]byte("+++"), line[:3])) {
 			target := string(line[5:])
 			newFile := diff.engine.NewFile(entities.File(target), res.Path, res.Name)
 			newPath := []byte(string(newFile))
@@ -194,14 +223,14 @@ func (diff *DirectoryLocalDiffInteractor) transformPatch(content []byte, pattern
 		} else
 
 		// change context needs to be updated following the mappings of the file
-		if isMatch && len(line) > 2 && bytes.Equal([]byte("@@"), line[:2]) {
+		if (res != nil) && isMatch && len(line) > 2 && bytes.Equal([]byte("@@"), line[:2]) {
 			n := bytes.Index(line[2:], []byte("@@")) + 2
 			newContent := diff.engine.NewContent(line[n:], res.Content)
 			line = append(line[:n], newContent...)
 		} else
 
 		// file content needs to be updated following the mappings of the file
-		if isMatch && len(line) > 1 && (bytes.Equal([]byte("-"), line[:1]) || bytes.Equal([]byte("+"), line[:1])) {
+		if (res != nil) && isMatch && len(line) > 1 && (bytes.Equal([]byte("-"), line[:1]) || bytes.Equal([]byte("+"), line[:1])) {
 			line = diff.engine.NewContent(line, res.Content)
 		}
 

@@ -6,13 +6,13 @@
 //	mockgen -source=internal/core/usecases/lib_files.go -destination=internal/core/usecases/lib_files_test.go -package=usecases
 //
 
-// Package usecases_test is a generated GoMock package.
+// Package usecases is a generated GoMock package.
 package usecases
 
 import (
 	reflect "reflect"
 
-	entities "github.com/sombrahq/sombra-cli/internal/core/entities"
+	entities "github.com/yunier-rojas/sombra-cli/internal/core/entities"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -135,6 +135,20 @@ func (m *MockFileManagerPort) Read(dir string, fn entities.File) ([]byte, error)
 func (mr *MockFileManagerPortMockRecorder) Read(dir, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockFileManagerPort)(nil).Read), dir, fn)
+}
+
+// Remove mocks base method.
+func (m *MockFileManagerPort) Remove(dir string, fn entities.File) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", dir, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove.
+func (mr *MockFileManagerPortMockRecorder) Remove(dir, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockFileManagerPort)(nil).Remove), dir, fn)
 }
 
 // Write mocks base method.

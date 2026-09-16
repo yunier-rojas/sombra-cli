@@ -1,6 +1,6 @@
 ---
 title: Contact
-summary: Get in touch with the Sombra CLI maintainer.
+description: Get in touch with the Sombra CLI maintainer.
 ---
 
 ## Get in Touch
@@ -14,10 +14,14 @@ Feel free to reach out if you're:
 
 ## Contact Methods
 
-- 📧 **Email** — [yunier@sombrahq.com](mailto:yunier@sombrahq.com)
+- 📧 **Email** — [yunier.rojas@gmail.com](mailto:yunier.rojas@gmail.com)
 - 💼 **LinkedIn** — [Yunier Rojas García](https://www.linkedin.com/in/yunier-rojas-garc%C3%ADa/)
-- 🐛 **GitHub Issues** — [Open an Issue](https://github.com/sombrahq/sombra-cli/issues)
+- 🐛 **GitHub Issues** — [Open an Issue](https://github.com/yunier-rojas/sombra-cli/issues)
 
 ---
 
+[//]: # (sombra:skip)
+
 If you're looking for how to use the tool, visit the [User Guide](user-guide/index.md) or check out the [CLI Commands](user-guide/commands.md).
+
+[//]: # (sombra:end)

@@ -11,13 +11,16 @@ Run `sombra --help` at any time to view global help.
 ---
 
 
-## 🔧 `local` Commands
+## `local` Commands
 
 Used to apply and update templates in your working project.
 
 ### `sombra local init`
 
-Generate a new project from a remote Git template.
+Register a template in the project's `sombra.yaml`. The command resolves the template
+definition, prompts for the variables it declares, and creates or updates
+`sombra.yaml` with the template URI and the captured values. It does not copy files;
+run `sombra local update` to apply the template.
 
 ```bash
 sombra local init TEMPLATE
@@ -30,38 +33,42 @@ sombra local init TEMPLATE
 #### Example:
 
 ```bash
-sombra local init github.com/sombrahq/playground-django-api-template
+sombra local init github.com/your-org/your-template
 ```
 
 ---
 
 ### `sombra local update`
 
-Update your current project using the source template.
+Apply (or refresh) a template that is registered in `sombra.yaml`. Files are copied
+using the variables stored for that template, and its `current` version is updated to
+the resolved tag.
 
 ```bash
-sombra local update [--tag TAG] [--method METHOD] TEMPLATE
+sombra local update [--tag TAG] [--method METHOD] [--prune] TEMPLATE
 ```
 
 #### Positional:
 
-* `TEMPLATE`: Git repo URL of the template
+* `TEMPLATE`: Git repo URL of the template. It must match the `uri` of a template
+  already registered by `sombra local init`.
 
 #### Options:
 
-* `--tag`: Specific git tag or version to use
-* `--method`: `copy` (default) or `diff` for smarter merging
+* `--tag`: Specific git tag or version to use (defaults to the latest tag)
+* `--method`: `copy` (default) or `diff` for smarter merging. `diff` ignores patterns marked [`copy_only`](../sombra-templates/concepts.md#copy_only-copy-method-only-patterns)
+* `--prune`: Remove target files matching a `delete: true` pattern
 * `--help, -h`: Show help
 
 #### Example:
 
 ```bash
-sombra local update --tag v1.2.0 --method diff github.com/org/template-repo
+sombra local update --tag v1.2.0 --method diff --prune github.com/your-org/your-template
 ```
 
 ---
 
-## 🧪 `template` Commands
+## `template` Commands
 
 Used to turn existing codebases into reusable templates.
 
@@ -71,7 +78,7 @@ Initialize a `.sombra/default.yaml` template from an existing project.
 
 ```bash
 sombra template init [--exclude PATTERN] [--only PATTERN] [DIR]
-````
+```
 
 #### Positional:
 
@@ -80,7 +87,7 @@ sombra template init [--exclude PATTERN] [--only PATTERN] [DIR]
 #### Options:
 
 * `--exclude, -e`: Glob to exclude files (e.g. `"*.pyc"`)
-* `--only, -o`: Glob to include files
+* `--only, -o`: Glob to include files (default: all files, `/**/*`)
 * `--help, -h`: Show help
 
 #### Example:

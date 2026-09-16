@@ -1,7 +1,8 @@
 package usecases
 
 import (
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
+	"fmt"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 	"path/filepath"
 )
 
@@ -35,20 +36,20 @@ func NewLocalCopyInteractor(
 	}
 }
 
-func (copy *LocalCopyInteractor) LocalUpdate(target, uri, tag string) error {
+func (copy *LocalCopyInteractor) LocalUpdate(target, uri, tag string, prune bool) ([]string, error) {
 	// Read sombra file
 	sombraFile := copy.sombraDefManager.GetFile(target)
 	def, err := copy.sombraDefManager.Load(sombraFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Download and prepare the version
 	repo, err := copy.repoPrepare.Prepare(uri, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer repo.Clean()
+	defer func() { _ = repo.Clean() }()
 
 	// If the tag variable is empty, find the latest tag
 	var version entities.Version
@@ -56,11 +57,11 @@ func (copy *LocalCopyInteractor) LocalUpdate(target, uri, tag string) error {
 	if tag == "" {
 		tags, err = repo.GetTags()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		version, err = copy.versionManager.GetLatest(tags, "*")
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		version = entities.Version(tag)
@@ -69,23 +70,33 @@ func (copy *LocalCopyInteractor) LocalUpdate(target, uri, tag string) error {
 	// Iterate over all templates
 	var tpl *entities.TemplateDef
 	var fn entities.File
+	var removed []string
 	for _, template := range def.Templates {
 		if template.URI != uri {
 			continue
 		}
 
+		targetDir := filepath.Join(target, template.Path)
+
 		// Render TemplateConfig Definition using Sombra configuration
 		fn = copy.templateDefManager.GetFile(repo.Dir())
 		tpl, err = copy.templateDefManager.Render(fn, template.Vars)
 		if err != nil {
-			return err
+			return removed, err
 		}
 
 		// Execute the mappings
-		err = copy.copyFiles(repo.Dir(), filepath.Join(target, template.Path), tpl)
+		err = copy.copyFiles(repo.Dir(), targetDir, tpl, template.Vars)
 		if err != nil {
-			return err
+			return removed, err
 		}
+
+		// Remove files dropped by the template (tombstones)
+		pruned, err := pruneTarget(copy.scanner, copy.localFiles, copy.engine, targetDir, tpl.Patterns, prune)
+		if err != nil {
+			return removed, err
+		}
+		removed = append(removed, pruned...)
 
 		// Update the template configuration
 		template.Current = version
@@ -94,13 +105,13 @@ func (copy *LocalCopyInteractor) LocalUpdate(target, uri, tag string) error {
 	// Store sombra file
 	err = copy.sombraDefManager.Save(sombraFile, def)
 	if err != nil {
-		return err
+		return removed, err
 	}
 
-	return nil
+	return removed, nil
 }
 
-func (copy *LocalCopyInteractor) copyFiles(templateDir, targetDir string, templateConfig *entities.TemplateDef) error {
+func (copy *LocalCopyInteractor) copyFiles(templateDir, targetDir string, templateConfig *entities.TemplateDef, vars entities.Mappings) error {
 	tree := copy.scanner.ScanTree(templateDir, []entities.Wildcard{"**/*"}, nil)
 	var fn entities.File
 	var items *entities.MapResult
@@ -128,7 +139,7 @@ func (copy *LocalCopyInteractor) copyFiles(templateDir, targetDir string, templa
 		if result.IsDir {
 			err = copy.processDir(targetDir, fn, items)
 		} else {
-			err = copy.processFile(templateDir, targetDir, fn, items)
+			err = copy.processFile(templateDir, targetDir, fn, items, vars)
 		}
 
 		if err != nil {
@@ -143,14 +154,29 @@ func (copy *LocalCopyInteractor) processDir(target string, path entities.File, r
 	return copy.localFiles.EnsureDir(target, newDir)
 }
 
-func (copy *LocalCopyInteractor) processFile(src string, target string, file entities.File, res *entities.MapResult) error {
+func (copy *LocalCopyInteractor) processFile(src string, target string, file entities.File, res *entities.MapResult, vars entities.Mappings) error {
 	newFile := copy.engine.NewFile(file, res.Path, res.Name)
-	content, err := copy.localFiles.Read(src, file)
-	if err != nil {
-		return err
+
+	var content []byte
+	var err error
+	if res.Replace != nil {
+		// `replace` points to a file inside the template's .sombra directory;
+		// its rendered content is used instead of the matched file.
+		content, err = copy.templateDefManager.RenderReplace(src, *res.Replace, vars)
+		if err != nil {
+			return err
+		}
+	} else {
+		content, err = copy.localFiles.Read(src, file)
+		if err != nil {
+			return err
+		}
 	}
 
-	newContent := copy.engine.NewContent(content, res.Content)
+	newContent, err := copy.engine.TransformFile(content, res.Content, vars, res.BlockDirectives)
+	if err != nil {
+		return fmt.Errorf("%s: %w", file, err)
+	}
 	err = copy.localFiles.Write(target, newFile, newContent)
 	return err
 }

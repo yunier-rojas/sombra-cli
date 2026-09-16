@@ -2,7 +2,7 @@ package analysers
 
 import (
 	"github.com/bmatcuk/doublestar/v4"
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
 	"strings"
 )
 

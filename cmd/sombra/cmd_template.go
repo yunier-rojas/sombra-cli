@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
 )
 
 type TemplateSubcommand struct {

@@ -1,0 +1,194 @@
+# Sombra template definition for sombra-cli.
+#
+# A new project is generated from a curated set of key files: the CLI entry
+# point, the composition root, the domain entities, the logger and the build /
+# docs / CI / QA scaffolding. The product's business logic and the rest of the
+# frameworks are intentionally left out, so the result is a lean structure to
+# build on rather than a project that compiles as-is. Module and command
+# references are renamed on copy; there is no `replace` and no external
+# template directory. The Go skeleton is marked `copy_only` so it is seeded by
+# `sombra local update --method copy` and left alone by `--method diff`.
+#
+# Optional components are toggled with variables:
+#   include_ci, include_docs, include_qa
+
+vars:
+  - project
+  - module
+  - repository
+  - author
+  - include_ci
+  - include_docs
+  - include_qa
+
+patterns:
+  # ---------------------------------------------------------------------------
+  # Global renames applied to every copied file.
+  # ---------------------------------------------------------------------------
+  - pattern: "/**/*"
+    abstract: true
+    default:
+      "github.com/yunier-rojas/sombra-cli": "{{ .module }}"
+      "yunier-rojas/sombra-cli": "{{ .repository }}"
+      "sombra-cli": "{{ .project }}"
+      "Yunier Rojas García": "{{ .author }}"
+      "Yunier": "{{ .author }}"
+      "word:sombra": "{{ .project }}"
+
+  # ---------------------------------------------------------------------------
+  # Go skeleton: CLI entry point, composition root and domain entities.
+  # ---------------------------------------------------------------------------
+  ## Copying main command file.
+  - pattern: "/cmd/sombra/main.go"
+    copy_only: true
+    content:
+      "Local": "Greet"
+      "subcommand:local": "subcommand:greet"
+    block_directives: true
+
+  # Copying a subcommand tree.
+  - pattern: "/cmd/sombra/cmd_local.go"
+    copy_only: true
+    name:
+      "cmd_local.go": "cmd_greet.go"
+    content:
+      "Local": "Greet"
+      "LocalInit": "Greeter"
+      "subcommand:init": "subcommand:greeter"
+    block_directives: true
+
+  # Copying a subcommand leaf.
+  - pattern: "/cmd/sombra/cmd_local_init.go"
+    copy_only: true
+    name:
+      "cmd_local_init.go": "cmd_greeter.go"
+    content:
+      "Local": "Greet"
+      "LocalInit": "Greeter"
+      "re:Template string (.*)": "Say string `arg:\"positional,required\" help:\"What to say\"`"
+      "args.Template": "args.Say"
+      "Failed to create local init runtime": "Failed to create greeter runtime"
+      "Failed to init local project": "Failed to greet"
+    block_directives: true
+
+  - pattern: "/internal/core/entities/sombra_entities.go"
+    copy_only: true
+    name:
+      "sombra_entities.go": "entities.go"
+    block_directives: true
+
+  # Copying a basic use case.
+  - pattern: "/internal/core/usecases/cli_local_init.go"
+    copy_only: true
+    name:
+      "cli_local_init.go": "cli_greeter.go"
+    content:
+      "Local": "Greet"
+      "LocalInit": "Greeter"
+      "localInit": "greeter"
+
+  # Copying a basic use case.
+  - pattern: "/internal/core/usecases/project_init.go"
+    copy_only: true
+    name:
+      "project_init.go": "greet_say.go"
+    content:
+      "Local": "Greet"
+      "LocalInit": "Greeter"
+      "*LocalInitInteractor {": "GreeterCase { return nil"
+    block_directives: true
+
+  - pattern: "/internal/frameworks/logger/logger.go"
+    copy_only: true
+
+  # Copying dependency injection
+  - pattern: "/internal/runtime/container.go"
+    copy_only: true
+    content:
+      "LocalInit": "Greeter"
+    block_directives: true
+
+  # Copying sample command runtime.
+  - pattern: "/internal/runtime/local_init.go"
+    copy_only: true
+    name:
+      "local_init.go": "greeter.go"
+    content:
+      "Local": "Greet"
+      "LocalInit": "Greeter"
+    block_directives: true
+
+  - pattern: "/go.mod"
+    copy_only: true
+
+  - pattern: "/go.sum"
+    copy_only: true
+
+  # ---------------------------------------------------------------------------
+  # Build and repository scaffolding.
+  # ---------------------------------------------------------------------------
+  - pattern: "/Makefile"
+    content:
+      "word:sombra": "{{ .project }}"
+
+  - pattern: "/mk/.gitignore"
+  - pattern: "/mk/build.mk"
+    content:
+      "word:sombra": "{{ .project }}"
+  - pattern: "/mk/test.mk"
+
+  - pattern: "/.editorconfig"
+  - pattern: "/.gitignore"
+  - pattern: "/.dockerignore"
+  - pattern: "/LICENSE"
+
+  - pattern: "/README.md"
+    content:
+      "word-ci:sombra": "{{ .project }}"
+
+  - pattern: "/AGENTS.md"
+    content:
+      "word-ci:sombra": "{{ .project }}"
+
+  # ---------------------------------------------------------------------------
+  # Optional components, added only when the matching variable is enabled.
+  # ---------------------------------------------------------------------------
+  - pattern: "/.github/**"
+    when: '{{ eq .include_ci "true" }}'
+    content:
+      "word-ci:sombra": "{{ .project }}"
+      "sombra-": "{{ .project }}-"
+
+  - pattern: "/qa/**"
+    when: '{{ eq .include_qa "true" }}'
+    content:
+      "cmd/sombra": "cmd/{{ .project }}"
+
+  - pattern: "/mk/qa.mk"
+    when: '{{ eq .include_qa "true" }}'
+
+  - pattern: "/docs/**"
+    abstract: true
+    when: '{{ eq .include_docs "true" }}'
+
+  - pattern: "/docs/requirements.txt"
+    when: '{{ eq .include_docs "true" }}'
+
+  - pattern: "/docs/index.md"
+    when: '{{ eq .include_docs "true" }}'
+    block_directives: true
+
+  - pattern: "/docs/contact.md"
+    when: '{{ eq .include_docs "true" }}'
+    block_directives: true
+
+  - pattern: "/docs/about.md"
+    when: '{{ eq .include_docs "true" }}'
+    block_directives: true
+
+  - pattern: "/mkdocs.yml"
+    block_directives: true
+    when: '{{ eq .include_docs "true" }}'
+
+  - pattern: "/mk/docs.mk"
+    when: '{{ eq .include_docs "true" }}'

@@ -4,30 +4,30 @@ title: Sombra Templates
 
 ## Overview
 
-Sombra Templates let you turn real production code into reusable, versioned project generators — without modifying the original source.
+Sombra templates turn real code into reusable, versioned project generators. You do not modify the original repository.
 
-This section explains how to author, structure, and publish templates that can be used by others with the `sombra` CLI.
+This section explains how to author, structure, and publish a template that other people can use with the `sombra` CLI.
 
 ---
 
 ## What Is a Sombra Template?
 
-A **Sombra template** is just a Git repository that contains:
+A **Sombra template** is a Git repository that contains:
 
 - Real project files (application, service, etc.)
 - A `.sombra/default.yaml` file defining transformation rules
 
-When used with a `sombra.yaml`, the CLI can generate new projects by replacing values in filenames, content, and directory paths — all using Go templates.
+With a `sombra.yaml`, the CLI generates new projects by replacing values in filenames, content, and directory paths using Go templates.
 
 ---
 
 ## Who Is This For?
 
-This guide is for developers, consultants, or teams who want to:
+This guide is for developers, consultants, and teams who want to:
 
 - Share boilerplate across projects or clients
-- Enforce a consistent project structure and tooling setup
-- Reuse proven, production-quality code without duplication
+- Keep a consistent project structure and tooling setup across services
+- Reuse existing code without duplication
 
 ---
 
@@ -35,8 +35,8 @@ This guide is for developers, consultants, or teams who want to:
 
 Ready to build a template?
 
-- 🏗 [Start a Template](start-a-template.md) — Fork a real project and convert it into a Sombra template
-- 🧠 [Concepts](concepts.md) — Understand how templates, patterns, and mappings work
-- 📌 [Best Practices](best-practices.md) — Keep your templates clean and maintainable
+- [Start a Template](start-a-template.md) — Convert a real project into a Sombra template
+- [Concepts](concepts.md) — Templates, patterns, and mappings
+- [Best Practices](best-practices.md) — Keep a template maintainable
 
-To use a template instead, head to the [User Guide](../user-guide/index.md).
+To use a template instead, see the [User Guide](../user-guide/index.md).

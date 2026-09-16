@@ -2,8 +2,8 @@ package cvs
 
 import (
 	"bytes"
-	"github.com/sombrahq/sombra-cli/internal/core/usecases"
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/core/usecases"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
 	"os"
 	"os/exec"
 )

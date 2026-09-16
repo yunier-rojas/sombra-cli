@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Masterminds/sprig/v3"
-	"github.com/sombrahq/sombra-cli/internal/core/entities"
-	"github.com/sombrahq/sombra-cli/internal/core/usecases"
-	"github.com/sombrahq/sombra-cli/internal/frameworks/logger"
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
+	"github.com/yunier-rojas/sombra-cli/internal/core/usecases"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
@@ -27,7 +28,7 @@ func (c *DirectoryTemplateDefService) Load(def entities.File) (*entities.Templat
 	if err != nil {
 		return nil, fmt.Errorf("failed to open template definition file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Read the file content
 	data, err := io.ReadAll(file)
@@ -87,18 +88,14 @@ func (c *DirectoryTemplateDefService) Render(def entities.File, vars entities.Ma
 	}
 
 	logger.Info(fmt.Sprintf("Parsing template file: %s", fn))
-	tmp := template.Must(template.New("template").Funcs(sprig.FuncMap()).Parse(string(data)))
-
-	buf := bytes.NewBufferString("")
-	logger.Info("Executing template with provided variables")
-	err = tmp.Execute(buf, vars)
+	rendered, err := renderTemplate(data, vars)
 	if err != nil {
 		logger.Error("failed to execute template", err)
 		return conf, err
 	}
 
 	logger.Info("Unmarshalling template YAML to struct")
-	err = yaml.Unmarshal(buf.Bytes(), &conf)
+	err = yaml.Unmarshal(rendered, &conf)
 	if err != nil {
 		logger.Error("failed to unmarshal YAML", err)
 		return conf, err
@@ -106,6 +103,40 @@ func (c *DirectoryTemplateDefService) Render(def entities.File, vars entities.Ma
 
 	logger.Info("Successfully retrieved template definition")
 	return conf, nil
+}
+
+// RenderReplace loads a file from the template's .sombra directory and renders
+// it with the project variables. The name is relative to .sombra and may not
+// escape that directory.
+func (c *DirectoryTemplateDefService) RenderReplace(dir, name string, vars entities.Mappings) ([]byte, error) {
+	base := filepath.Join(dir, ".sombra")
+	fn := filepath.Join(base, name)
+
+	rel, err := filepath.Rel(base, fn)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return nil, fmt.Errorf("invalid replace file %q", name)
+	}
+
+	data, err := os.ReadFile(fn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read replace file %q: %w", name, err)
+	}
+
+	return renderTemplate(data, vars)
+}
+
+func renderTemplate(data []byte, vars entities.Mappings) ([]byte, error) {
+	tmp, err := template.New("template").Funcs(sprig.FuncMap()).Parse(string(data))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse template: %w", err)
+	}
+
+	buf := bytes.NewBufferString("")
+	if err := tmp.Execute(buf, vars); err != nil {
+		return nil, fmt.Errorf("failed to execute template: %w", err)
+	}
+
+	return buf.Bytes(), nil
 }
 
 func (c *DirectoryTemplateDefService) ensureDir(destDir string, _ os.FileInfo) error {
