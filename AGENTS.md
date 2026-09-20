@@ -22,7 +22,8 @@ All commands are driven by the top-level `Makefile`, which includes `mk/*.mk`.
 | `make test`                                          | Run all tests with coverage (`go test --cover -parallel=1 -v ...`) |
 | `make qa`                                            | Format `internal/` and `cmd/` with `go fmt`                        |
 | `make imports`                                       | Enforce import-layer rules (see Architecture)                      |
-| `make build-docs`                                    | Build MkDocs site (requires Python/pip)                            |
+| `make build-docs`                                    | Build Hugo site (requires Hugo extended + Go)                      |
+| `make serve-docs`                                    | Serve docs locally at `http://localhost:1313/`                     |
 | `go test ./internal/core/usecases/lib_cvs_test.go`   | Run a single test file                                             |
 | `go test -run TestName ./internal/core/usecases/...` | Run a single test by name                                          |
 
@@ -92,7 +93,8 @@ Notably:
 
 ## Docs
 
-- User-facing docs live in `docs/` and are built with MkDocs (`mkdocs.yml`).
+- User-facing docs live in `docs/` and are built with Hugo + Hextra
+  (`docs/hugo.toml`, content in `docs/content/`, theme pinned in `docs/go.mod`).
 - Update them when changing CLI commands or the `sombra.yaml` format.
 - Encouraging, accessible, clear, and empathetic.
 - Use short sentences, active voice, concise language.
@@ -100,6 +102,11 @@ Notably:
 - Keeps docs up to date with the code.
 - Document features and behaviors, use facts, examples but not opinions.
 - State limitations and caveats.
+- Heavily reduce the usage of emojis.
+- Forbid the use of — in the docs
+- Never write the literal `sombra:skip` or `sombra:end` tokens in prose of
+  template-copied pages (`_index.md`, `about.md`, `contact.md`); the copy engine
+  treats any line containing them as a block directive.
 
 ## Errors
 - Wrap with context and %w: `fmt.Errorf("load user %s: %w", id, err)`.

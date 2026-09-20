@@ -171,24 +171,34 @@ patterns:
     abstract: true
     when: '{{ eq .include_docs "true" }}'
 
-  - pattern: "/docs/requirements.txt"
+  - pattern: "/docs/go.mod"
     when: '{{ eq .include_docs "true" }}'
 
-  - pattern: "/docs/index.md"
+  - pattern: "/docs/go.sum"
+    when: '{{ eq .include_docs "true" }}'
+    verbatim: true
+
+  - pattern: "/docs/hugo.toml"
     when: '{{ eq .include_docs "true" }}'
     block_directives: true
 
-  - pattern: "/docs/contact.md"
+  - pattern: "/docs/i18n/en.yaml"
+    when: '{{ eq .include_docs "true" }}'
+
+  - pattern: "/docs/layouts/**"
+    when: '{{ eq .include_docs "true" }}'
+
+  - pattern: "/docs/content/_index.md"
     when: '{{ eq .include_docs "true" }}'
     block_directives: true
 
-  - pattern: "/docs/about.md"
+  - pattern: "/docs/content/contact.md"
     when: '{{ eq .include_docs "true" }}'
     block_directives: true
 
-  - pattern: "/mkdocs.yml"
-    block_directives: true
+  - pattern: "/docs/content/about.md"
     when: '{{ eq .include_docs "true" }}'
+    block_directives: true
 
   - pattern: "/mk/docs.mk"
     when: '{{ eq .include_docs "true" }}'

@@ -1,10 +1,13 @@
 ---
 title: CLI Commands
+weight: 2
+aliases:
+  - /user-guide/commands/
 ---
 
 ## Overview
 
-The `sombra` CLI provides commands to generate and update projects from templates, and to create templates from existing projects.
+`sombra` provides commands to generate and update projects from templates, and to create templates from existing projects.
 
 Run `sombra --help` at any time to view global help.
 
@@ -56,7 +59,7 @@ sombra local update [--tag TAG] [--method METHOD] [--prune] TEMPLATE
 #### Options:
 
 * `--tag`: Specific git tag or version to use (defaults to the latest tag)
-* `--method`: `copy` (default) or `diff` for smarter merging. `diff` ignores patterns marked [`copy_only`](../sombra-templates/concepts.md#copy_only-copy-method-only-patterns)
+* `--method`: `copy` (default) or `diff` for smarter merging. `diff` ignores patterns marked [`copy_only`](../templates/concepts.md#copy_only-copy-method-only-patterns)
 * `--prune`: Remove target files matching a `delete: true` pattern
 * `--help, -h`: Show help
 
@@ -98,4 +101,4 @@ sombra template init --exclude "README.md" ./my-project
 
 ---
 
-For detailed usage, see the [Sombra File](sombra-file.md) or [Template Guide](../sombra-templates/index.md).
+For detailed usage, see the [`sombra.yaml` file](sombra-file.md) or [Template Guide](../templates/index.md).

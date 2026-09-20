@@ -1,13 +1,16 @@
 ---
 title: Start a Template
+weight: 2
+aliases:
+  - /sombra-templates/start-a-template/
 ---
 
 ## Overview
 
-This guide walks you through creating a Sombra template from an existing codebase — no
-changes to the source code required. The worked example is Sombra's own definition:
+This guide walks you through creating a template from an existing codebase — no
+changes to the source code required. The worked example is this repository's definition:
 [`.sombra/default.yaml`](https://github.com/yunier-rojas/sombra-cli/blob/main/.sombra/default.yaml)
-in this repository, which turns the CLI into a reusable Go project skeleton.
+in this repository, which turns `sombra-cli` into a reusable Go project skeleton.
 
 Use this when you want to:
 
@@ -229,7 +232,7 @@ records the applied tag in `current`. Because the Go skeleton is `copy_only`, th
 
 ## Summary
 
-To convert any repo into a Sombra template:
+To convert any repo into a template:
 
 1. Add `.sombra/default.yaml`
 2. Declare `vars` for the consumer to answer

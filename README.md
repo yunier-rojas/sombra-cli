@@ -4,23 +4,23 @@
 
 Built for developers, consultants, and teams who want to:
 
-* ⚡ Quickly start new projects with consistent setup
-* 🧱 Reuse real, tested code without changing it
-* 🔄 Keep projects up to date with shared boilerplate
+* Quickly start new projects with consistent setup
+* Reuse real, tested code without changing it
+* Keep projects up to date with shared boilerplate
 
 ---
 
-## ✨ Features
+## Features
 
-* ✅ Use any Git repository as a template source
-* ⚙️ Define flexible rules using Go templates + YAML
-* ♻️ Reuse code without modifying production files
-* 🔍 Match and transform paths, filenames, and content
-* 🏷 Semantic versioning with Git tags
+* Use any Git repository as a template source
+* Define flexible rules using Go templates + YAML
+* Reuse code without modifying production files
+* Match and transform paths, filenames, and content
+* Semantic versioning with Git tags
 
 ---
 
-## 📦 Install
+## Install
 
 ### Option 1: via Go
 
@@ -40,11 +40,11 @@ cd sombra-cli
 make build WHAT=sombra
 ```
 
-See [Installation Guide](https://yunier-rojas.github.io/sombra-cli/user-guide/installation.html) for more details.
+See [Installation Guide](https://yunier-rojas.github.io/sombra-cli/getting-started/installation/) for more details.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Create a Template
 
@@ -81,21 +81,21 @@ sombra local update --tag v1.0.0 --method copy https://github.com/your-org/your-
 
 ---
 
-## 📖 Documentation
+## Documentation
 
-Full docs available at 👉 [https://yunier-rojas.github.io/sombra-cli/](https://yunier-rojas.github.io/sombra-cli/)
+Full docs available at [https://yunier-rojas.github.io/sombra-cli/](https://yunier-rojas.github.io/sombra-cli/)
 
 Key topics:
 
-* [Installation](https://yunier-rojas.github.io/sombra-cli/user-guide/installation.html)
-* [Creating Templates](https://yunier-rojas.github.io/sombra-cli/sombra-templates/start-a-template.html)
-* [sombra.yaml Config](https://yunier-rojas.github.io/sombra-cli/user-guide/sombra-file.html)
-* [Command Reference](https://yunier-rojas.github.io/sombra-cli/user-guide/commands.html)
+* [Installation](https://yunier-rojas.github.io/sombra-cli/getting-started/installation/)
+* [Creating Templates](https://yunier-rojas.github.io/sombra-cli/templates/start-a-template/)
+* [sombra.yaml Config](https://yunier-rojas.github.io/sombra-cli/cli/sombra-file/)
+* [Command Reference](https://yunier-rojas.github.io/sombra-cli/cli/commands/)
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-Issues and PRs welcome! Start with the [Contact page](https://yunier-rojas.github.io/sombra-cli/contact.html) or open an [Issue](https://github.com/yunier-rojas/sombra-cli/issues).
+Issues and PRs welcome! Start with the [Contact page](https://yunier-rojas.github.io/sombra-cli/contact/) or open an [Issue](https://github.com/yunier-rojas/sombra-cli/issues).
 
-MIT licensed. Made with ❤️ by [@yunier](https://www.linkedin.com/in/yunier-rojas-garc%C3%ADa/)
+MIT licensed. Made by [@yunier](https://www.linkedin.com/in/yunier-rojas-garc%C3%ADa/)

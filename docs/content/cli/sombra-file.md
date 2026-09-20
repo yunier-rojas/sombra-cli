@@ -1,10 +1,13 @@
 ---
-title: Sombra File
+title: sombra.yaml File
+weight: 1
+aliases:
+  - /user-guide/sombra-file/
 ---
 
-## What is the Sombra File?
+## What is the `sombra.yaml` file?
 
-The `sombra.yaml` file defines how templates are applied to a project. It lives in the root of a **target repository** — the repo you are creating or updating using a Sombra template.
+The `sombra.yaml` file defines how templates are applied to a project. It lives in the root of a **target repository** — the repo you are creating or updating using a template.
 
 This file tells `sombra` which template(s) to use, which variables to pass, and which version (tag) is currently applied.
 
@@ -48,7 +51,7 @@ templates:
 
 * `uri`: The Git repository URL (or local path) of the template
 * `path`: Optional subdirectory of the target project where the template is applied
-* `current`: The version (Git tag) currently applied; written by the CLI
+* `current`: The version (Git tag) currently applied; written by `sombra`
 * `vars`: Key-value pairs that are injected into the template
 
 `current` is updated automatically when `sombra local update` succeeds. It lets a project record which template version it was generated from.
@@ -88,4 +91,4 @@ Apply or refresh the registered template:
 sombra local update github.com/your-org/your-template
 ```
 
-For more, check out the [CLI Commands](commands.md) or [Installation Guide](installation.md).
+For more, check out the [CLI Commands](commands.md) or [Installation Guide](../getting-started/installation.md).

@@ -22,11 +22,12 @@
 
 # Go workspace file
 go.work
+go.
 
-### mkdocs ###
-.venv
-site
-.cache
+### hugo ###
+public
+resources
+.hugo_build.lock
 .env
 
 

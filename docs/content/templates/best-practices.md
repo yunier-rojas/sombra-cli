@@ -1,8 +1,11 @@
 ---
 title: Best Practices
+weight: 3
+aliases:
+  - /sombra-templates/best-practices/
 ---
 
-## Best Practices for Creating Sombra Templates
+## Best Practices for Creating Templates
 
 Follow these practices when you design a `.sombra/default.yaml`.
 
@@ -10,14 +13,14 @@ Follow these practices when you design a `.sombra/default.yaml`.
 
 ### 1. Keep Definitions Simple
 
-While Sombra supports Go templating and regex, complex logic increases the risk of errors and reduces maintainability.  
+While `sombra-cli` supports Go templating and regex, complex logic increases the risk of errors and reduces maintainability.  
 Favor simple mappings and clear structure over clever or deeply nested patterns.
 
 ---
 
 ### 2. Separate Template Logic from Production Code
 
-Never modify production code just to turn it into a Sombra template.  
+Never modify production code just to turn it into a template.  
 Use abstract patterns and search/replace mappings instead — this keeps your codebase clean and reusable.
 
 ---

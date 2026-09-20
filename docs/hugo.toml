@@ -1,0 +1,97 @@
+baseURL = "https://yunier-rojas.github.io/sombra-cli/"
+languageCode = "en-us"
+title = "sombra-cli"
+
+enableRobotsTXT = true
+enableGitInfo = true
+disableKinds = ["taxonomy", "term"]
+
+[module]
+  [[module.imports]]
+    path = "github.com/imfing/hextra"
+
+[markup]
+  [markup.highlight]
+    noClasses = false
+
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
+[params]
+  description = "sombra-cli generates projects from reusable Git templates."
+
+  [params.author]
+    name = "Yunier Rojas García"
+
+  [params.navbar]
+    displayTitle = true
+    displayLogo = false
+
+  [params.footer]
+    displayCopyright = true
+    displayPoweredBy = false
+
+  [params.editURL]
+    enable = true
+    base = "https://github.com/yunier-rojas/sombra-cli/edit/main/docs/content"
+
+  [params.search]
+    enable = true
+    type = "flexsearch"
+
+  [params.theme]
+    default = "system"
+    displayToggle = true
+
+  [params.highlight.copy]
+    enable = true
+    display = "hover"
+
+# sombra:skip
+[[menu.main]]
+  name = "Getting Started"
+  pageRef = "/getting-started"
+  weight = 1
+
+[[menu.main]]
+  name = "CLI"
+  pageRef = "/cli"
+  weight = 2
+
+[[menu.main]]
+  name = "Templates"
+  pageRef = "/templates"
+  weight = 3
+# sombra:end
+
+[[menu.main]]
+  identifier = "more"
+  name = "More"
+  weight = 4
+
+[[menu.main]]
+  name = "About"
+  pageRef = "/about"
+  parent = "more"
+  weight = 1
+
+[[menu.main]]
+  name = "Contact"
+  pageRef = "/contact"
+  parent = "more"
+  weight = 2
+
+[[menu.main]]
+  name = "Search"
+  weight = 5
+  [menu.main.params]
+    type = "search"
+
+[[menu.main]]
+  name = "GitHub"
+  weight = 6
+  url = "https://github.com/yunier-rojas/sombra-cli"
+  [menu.main.params]
+    type = "link"
+    icon = "github"
