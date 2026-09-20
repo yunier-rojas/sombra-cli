@@ -1,25 +1,28 @@
 ---
 title: Template Concepts
+weight: 1
+aliases:
+  - /sombra-templates/concepts/
 ---
 
 ## Overview
 
-This page explains the internal structure and logic of **Sombra Templates**, including how files are transformed using
+This page explains the internal structure and logic of **templates**, including how files are transformed using
 Go templates, YAML definitions, and mappings.
 
-A Sombra template is composed of:
+A template is composed of:
 
 - Real source files (code, configs, etc.)
 - A `.sombra/default.yaml` file with transformation rules
 
-The CLI uses this configuration to generate new projects with modified paths, filenames, and content based on input
+`sombra` uses this configuration to generate new projects with modified paths, filenames, and content based on input
 variables.
 
 ---
 
 ## Directory Structure
 
-Sombra templates are Git repositories that contain a `.sombra` directory with a `default.yaml` file:
+Templates are Git repositories that contain a `.sombra` directory with a `default.yaml` file:
 
 ```
 
@@ -35,7 +38,7 @@ Only one definition file is currently supported.
 
 ## Go Templates + YAML
 
-Sombra uses [Go’s templating engine](https://pkg.go.dev/text/template) to apply variable substitutions. It also
+`sombra-cli` uses [Go’s templating engine](https://pkg.go.dev/text/template) to apply variable substitutions. It also
 includes [Sprig](https://masterminds.github.io/sprig/) functions for string, list, and math utilities.
 
 All variables come from the target repo’s `sombra.yaml`.
@@ -294,7 +297,7 @@ When the expression is false the pattern is skipped entirely: it does not contri
 mappings and cannot mark a file as included. This is useful for optional components
 (CI, docs, licenses) that would otherwise need a large `except` denylist.
 
-`when` is optional; omitting it keeps the pattern enabled as before. The `sombra init`
+`when` is optional; omitting it keeps the pattern enabled as before. The `sombra local init`
 command reads the definition before it is rendered, so patterns whose `when` is still an
 unevaluated expression are treated as enabled at that stage.
 

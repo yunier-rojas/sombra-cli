@@ -13,6 +13,6 @@ indent_style = tab
 indent_style = tab
 trim_trailing_whitespace = false
 
-[*.{yml,yaml,yml.tmpl,yaml.tmpl,json}]
+[*.{yml,yaml,yml.tmpl,yaml.tmpl,toml,json}]
 indent_style = space
 indent_size = 2

@@ -7,7 +7,7 @@ on:
 
 env:
   GO_VERSION: '1.26'
-  PY_VERSION: '3.13'
+  HUGO_VERSION: '0.154.3'
 
 jobs:
   build-cli:
@@ -55,10 +55,17 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Python
-        uses: actions/setup-python@v6
+      - name: Setup Go
+        uses: actions/setup-go@v6
         with:
-          python-version: ${{ env.PY_VERSION }}
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: docs/go.sum
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: ${{ env.HUGO_VERSION }}
+          extended: true
 
       - name: Build docs
         run: make build-docs
@@ -67,7 +74,7 @@ jobs:
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: docs/public
 
   release:
     runs-on: ubuntu-latest

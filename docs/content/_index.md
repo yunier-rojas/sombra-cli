@@ -1,18 +1,18 @@
 ---
-title: Welcome to Sombra
-description: Automate software setup with Sombra CLI templates.
+title: Welcome
+description: Automate software setup with sombra-cli templates.
 ---
 
 [//]: # (sombra:skip)
 
-## What is Sombra CLI?
+## What is `sombra-cli`?
 
-**Sombra CLI** is an open-source tool that generates projects from templates stored in Git repositories.  
+`sombra-cli` is an open-source tool that generates projects from templates stored in Git repositories.  
 A template is a real repository plus a `.sombra/default.yaml` file with transformation rules, so converting a repository does not change its code.
 
-## Why Sombra?
+## Why `sombra-cli`?
 
-- Sombra uses an existing repository as the template. There is no separate template format to maintain.
+- `sombra` uses an existing repository as the template. There is no separate template format to maintain.
 - It copies project structure, CI/CD, and dev environment files into new projects.
 - It updates existing projects when the template changes.
 
@@ -24,11 +24,11 @@ A template is a real repository plus a `.sombra/default.yaml` file with transfor
 
 ## Get Started
 
-- [Create a Template](sombra-templates/start-a-template.md)
-- [Generate a Project](user-guide/commands.md#sombra-local-init)
-- [Update a Project](user-guide/commands.md#sombra-local-update)
+- [Create a Template](templates/start-a-template.md)
+- [Generate a Project](cli/commands.md#sombra-local-init)
+- [Update a Project](cli/commands.md#sombra-local-update)
 
-Explore the full [User Guide](user-guide/index.md).
+Explore the full [Getting Started](getting-started/index.md) guide.
 
 [//]: # (sombra:end)
 

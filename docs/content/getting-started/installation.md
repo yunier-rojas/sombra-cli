@@ -1,10 +1,13 @@
 ---
-title: Install Sombra CLI
+title: Install sombra
+weight: 1
+aliases:
+  - /user-guide/installation/
 ---
 
 ## Installation Options
 
-You can install **Sombra CLI** using one of the following methods:
+You can install `sombra` using one of the following methods:
 
 ---
 
