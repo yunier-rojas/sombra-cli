@@ -40,7 +40,7 @@ List of one or more templates applied to the project. Each entry names a templat
 ```yaml
 templates:
   - id: app
-    uri: github.com/your-org/your-template
+    uri: https://github.com/your-org/your-template.git
     vars:
       project: My Awesome Project
       author: Jane Doe
@@ -73,7 +73,7 @@ falls back to `uri`, so projects created before `id` existed keep working.
 ```yaml
 templates:
   - id: app
-    uri: github.com/your-org/your-template
+    uri: https://github.com/your-org/your-template.git
     current: v1.2.0
     vars:
       project: Internal API
@@ -81,7 +81,7 @@ templates:
       email: dev@example.com
       entity: Config
   - id: common-ci
-    uri: github.com/your-org/common-ci
+    uri: https://github.com/your-org/common-ci.git
     path: .ci
     vars:
       project: Internal API
@@ -94,7 +94,7 @@ templates:
 Register a template (creates `sombra.yaml` if missing and prompts for its variables):
 
 ```bash
-sombra local init github.com/your-org/your-template --id app
+sombra local init https://github.com/your-org/your-template.git --id app
 ```
 
 Apply or refresh the registered template by id or URI:

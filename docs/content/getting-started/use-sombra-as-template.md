@@ -55,7 +55,7 @@ Create the target project directory and register the template:
 ```bash
 mkdir hello-cli
 cd hello-cli
-sombra local init github.com/yunier-rojas/sombra-cli --id starter
+sombra local init https://github.com/yunier-rojas/sombra-cli.git --id starter
 ```
 
 `--id` gives the template a short name you reuse on updates. Without it, `sombra`
@@ -84,7 +84,7 @@ Example `sombra.yaml`:
 ```yaml
 templates:
   - id: starter
-    uri: github.com/yunier-rojas/sombra-cli
+    uri: https://github.com/yunier-rojas/sombra-cli.git
     vars:
       github_user: acme
       project: hello-cli

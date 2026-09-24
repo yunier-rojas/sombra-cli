@@ -54,7 +54,7 @@ sombra local init [--id ID] TEMPLATE
 #### Example:
 
 ```bash
-sombra local init github.com/your-org/your-template --id app
+sombra local init https://github.com/your-org/your-template.git --id app
 ```
 
 ---

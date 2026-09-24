@@ -206,14 +206,14 @@ git push origin v1.0.0
 Consumers register it and answer the variables:
 
 ```bash
-sombra local init github.com/yunier-rojas/sombra-cli
+sombra local init https://github.com/yunier-rojas/sombra-cli.git
 ```
 
 That records them in the target project's `sombra.yaml`:
 
 ```yaml
 templates:
-  - uri: github.com/yunier-rojas/sombra-cli
+  - uri: https://github.com/yunier-rojas/sombra-cli.git
     vars:
       project: hello-cli
       module: github.com/acme/hello-cli
@@ -224,7 +224,7 @@ templates:
       include_qa: "false"
 ```
 
-Running `sombra local update github.com/yunier-rojas/sombra-cli` then copies the files and
+Running `sombra local update https://github.com/yunier-rojas/sombra-cli.git` then copies the files and
 records the applied tag in `current`. Because the Go skeleton is `copy_only`, the first
 `--method copy` seeds it and later `--method diff` updates everything else.
 
