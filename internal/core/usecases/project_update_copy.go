@@ -36,12 +36,24 @@ func NewLocalCopyInteractor(
 	}
 }
 
-func (copy *LocalCopyInteractor) LocalUpdate(target, uri, tag string, prune bool) ([]string, error) {
+func (copy *LocalCopyInteractor) LocalUpdate(target, ref, tag string, prune bool) ([]string, error) {
 	// Read sombra file
 	sombraFile := copy.sombraDefManager.GetFile(target)
 	def, err := copy.sombraDefManager.Load(sombraFile)
 	if err != nil {
 		return nil, err
+	}
+
+	// Resolve the reference (id or URI) to the templates it points to
+	matches := entities.ResolveTemplates(def, ref)
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("no template registered with id or uri %q", ref)
+	}
+	uri := matches[0].URI
+	for _, template := range matches {
+		if template.URI != uri {
+			return nil, fmt.Errorf("template %q resolves to multiple repositories", ref)
+		}
 	}
 
 	// Download and prepare the version
@@ -71,11 +83,7 @@ func (copy *LocalCopyInteractor) LocalUpdate(target, uri, tag string, prune bool
 	var tpl *entities.TemplateDef
 	var fn entities.File
 	var removed []string
-	for _, template := range def.Templates {
-		if template.URI != uri {
-			continue
-		}
-
+	for _, template := range matches {
 		targetDir := filepath.Join(target, template.Path)
 
 		// Render TemplateConfig Definition using Sombra configuration

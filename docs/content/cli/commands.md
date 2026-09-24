@@ -13,6 +13,16 @@ Run `sombra --help` at any time to view global help.
 
 ---
 
+## `version`
+
+Print the `sombra` version. The value is the release name or Git tag the binary
+was built from. A binary built without version information prints `dev`.
+
+```bash
+sombra version
+```
+
+---
 
 ## `local` Commands
 
@@ -26,17 +36,25 @@ definition, prompts for the variables it declares, and creates or updates
 run `sombra local update` to apply the template.
 
 ```bash
-sombra local init TEMPLATE
+sombra local init [--id ID] TEMPLATE
 ```
 
 #### Positional:
 
 * `TEMPLATE`: Git repo URL of the template
 
+#### Options:
+
+* `--id`: Unique short name for the template. When omitted, `sombra` derives it
+  from the repository name. The id only allows letters, numbers, underscores, and
+  dashes. An id given explicitly must be unique; a derived id gets a numeric suffix
+  on collision
+* `--help, -h`: Show help
+
 #### Example:
 
 ```bash
-sombra local init github.com/your-org/your-template
+sombra local init github.com/your-org/your-template --id app
 ```
 
 ---
@@ -53,8 +71,9 @@ sombra local update [--tag TAG] [--method METHOD] [--prune] TEMPLATE
 
 #### Positional:
 
-* `TEMPLATE`: Git repo URL of the template. It must match the `uri` of a template
-  already registered by `sombra local init`.
+* `TEMPLATE`: Id or Git repo URL of a template already registered by `sombra local init`.
+  An id is matched first; the URI is used as a fallback so older entries without an id
+  keep working.
 
 #### Options:
 
@@ -66,7 +85,7 @@ sombra local update [--tag TAG] [--method METHOD] [--prune] TEMPLATE
 #### Example:
 
 ```bash
-sombra local update --tag v1.2.0 --method diff --prune github.com/your-org/your-template
+sombra local update --tag v1.2.0 --method diff --prune app
 ```
 
 ---

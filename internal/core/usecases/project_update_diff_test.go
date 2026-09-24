@@ -1276,3 +1276,22 @@ func TestDirectoryLocalDiffInteractor_LocalUpdate(t *testing.T) {
 		})
 	}
 }
+
+func TestDirectoryLocalDiffInteractor_LocalUpdate_UnknownRef(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockSombraDefManager := NewMockSombraDefManagerPort(ctrl)
+	sombraFile := entities.File("/path/to/project/sombra.yaml")
+	mockSombraDefManager.EXPECT().GetFile("/path/to/project").Return(sombraFile)
+	mockSombraDefManager.EXPECT().Load(sombraFile).Return(&entities.SombraDef{
+		Templates: []*entities.TemplateConfig{{ID: "api", URI: "github.com/user/repo"}},
+	}, nil)
+
+	interactor := NewDirectoryLocalDiffInteractor(nil, nil, nil, mockSombraDefManager, nil, nil, nil, nil)
+
+	_, err := interactor.LocalUpdate("/path/to/project", "missing", "", false)
+	if err == nil || err.Error() != `no template registered with id or uri "missing"` {
+		t.Fatalf("LocalUpdate() error = %v, want unknown reference error", err)
+	}
+}

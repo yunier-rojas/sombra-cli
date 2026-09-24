@@ -1202,3 +1202,47 @@ func TestLocalCopyInteractor_LocalUpdate(t *testing.T) {
 		})
 	}
 }
+
+func TestLocalCopyInteractor_LocalUpdate_UnknownRef(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockSombraDefManager := NewMockSombraDefManagerPort(ctrl)
+	sombraFile := entities.File("/path/to/project/sombra.yaml")
+	mockSombraDefManager.EXPECT().GetFile("/path/to/project").Return(sombraFile)
+	mockSombraDefManager.EXPECT().Load(sombraFile).Return(&entities.SombraDef{
+		Templates: []*entities.TemplateConfig{{ID: "api", URI: "github.com/user/repo"}},
+	}, nil)
+
+	interactor := NewLocalCopyInteractor(nil, nil, mockSombraDefManager, nil, nil, nil, nil)
+
+	_, err := interactor.LocalUpdate("/path/to/project", "missing", "", false)
+	if err == nil || err.Error() != `no template registered with id or uri "missing"` {
+		t.Fatalf("LocalUpdate() error = %v, want unknown reference error", err)
+	}
+}
+
+func TestLocalCopyInteractor_LocalUpdate_ResolvesIDToURI(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockSombraDefManager := NewMockSombraDefManagerPort(ctrl)
+	sombraFile := entities.File("/path/to/project/sombra.yaml")
+	mockSombraDefManager.EXPECT().GetFile("/path/to/project").Return(sombraFile)
+	mockSombraDefManager.EXPECT().Load(sombraFile).Return(&entities.SombraDef{
+		Templates: []*entities.TemplateConfig{{ID: "api", URI: "github.com/user/repo"}},
+	}, nil)
+
+	mockRepo := NewMockRepositoryPort(ctrl)
+	mockRepoPrepare := NewMockRepositoryPrepareCase(ctrl)
+	mockRepoPrepare.EXPECT().Prepare("github.com/user/repo", "").Return(mockRepo, nil)
+	mockRepo.EXPECT().GetTags().Return(nil, errors.New("tags failed"))
+	mockRepo.EXPECT().Clean().Return(nil)
+
+	interactor := NewLocalCopyInteractor(mockRepoPrepare, nil, mockSombraDefManager, nil, nil, nil, nil)
+
+	_, err := interactor.LocalUpdate("/path/to/project", "api", "", false)
+	if err == nil || err.Error() != "tags failed" {
+		t.Fatalf("LocalUpdate() error = %v, want tags failed", err)
+	}
+}

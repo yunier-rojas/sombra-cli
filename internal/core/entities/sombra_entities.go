@@ -54,6 +54,7 @@ type FileAnalysis struct {
 type Mappings map[string]string
 
 type TemplateConfig struct {
+	ID      string   `yaml:"id,omitempty"`
 	URI     string   `yaml:"uri" validate:"required"`
 	Path    string   `yaml:"path,omitempty"`
 	Current Version  `yaml:"current,omitempty"`
