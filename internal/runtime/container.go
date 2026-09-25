@@ -33,10 +33,11 @@ func newContainer() (*dig.Container, error) {
 	container := dig.New()
 
 	providers := []provider{
-		{constructor: usecases.NewLocalInitInteractor, options: []dig.ProvideOption{dig.As(new(usecases.LocalInitCase))}},
-		{constructor: usecases.NewCliLocalInitInteractor, options: []dig.ProvideOption{dig.As(new(usecases.CliLocalInitCase))}},
+		{constructor: usecases.NewCliVersionInteractor, options: []dig.ProvideOption{dig.As(new(usecases.CliVersionCase))}},
 
 		// sombra:skip
+		{constructor: usecases.NewLocalInitInteractor, options: []dig.ProvideOption{dig.As(new(usecases.LocalInitCase))}},
+		{constructor: usecases.NewCliLocalInitInteractor, options: []dig.ProvideOption{dig.As(new(usecases.CliLocalInitCase))}},
 		{constructor: func() usecases.RepositoryFactory { return cvs.For }},
 		{constructor: usecases.NewRepositoryPrepareInteractor, options: []dig.ProvideOption{dig.As(new(usecases.RepositoryPrepareCase))}},
 		{constructor: files.NewDirectoryScannerService, options: []dig.ProvideOption{dig.As(new(usecases.DirectoryManagerPort))}},

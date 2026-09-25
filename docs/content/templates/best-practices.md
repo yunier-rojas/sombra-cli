@@ -73,7 +73,7 @@ applied version is recorded in the target's `sombra.yaml`:
 
 ```yaml
 templates:
-  - uri: github.com/your-org/your-template
+  - uri: https://github.com/your-org/your-template.git
     current: v1.0.0
 ```
 
@@ -85,7 +85,7 @@ Use a throwaway repo or directory to validate your template results.
 Run:
 
 ```bash
-sombra local init github.com/your-org/your-template
+sombra local init https://github.com/your-org/your-template.git
 ```
 
 Verify filenames, paths, and content transformations behave as expected before releasing.

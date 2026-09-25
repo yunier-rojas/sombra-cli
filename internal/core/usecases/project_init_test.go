@@ -47,6 +47,7 @@ func TestLocalInitInteractor_LocalInit(t *testing.T) {
 		name   string
 		target string
 		uri    string
+		id     string
 		setUp  func(ctrl *gomock.Controller) (
 			*MockRepositoryPrepareCase,
 			*MockTemplateDefManagerPort,
@@ -130,6 +131,9 @@ func TestLocalInitInteractor_LocalInit(t *testing.T) {
 						}
 						if def.Templates[1].URI != "github.com/user/repo" {
 							t.Errorf("Expected second template URI github.com/user/repo, got %s", def.Templates[1].URI)
+						}
+						if def.Templates[1].ID != "repo" {
+							t.Errorf("Expected second template ID repo, got %s", def.Templates[1].ID)
 						}
 
 						// Check that the variables were properly set
@@ -320,6 +324,156 @@ func TestLocalInitInteractor_LocalInit(t *testing.T) {
 			shouldError: true,
 			errorMsg:    "sombra definition save failed",
 		},
+		{
+			name:   "explicit id is stored",
+			target: "/path/to/target",
+			uri:    "github.com/user/repo",
+			id:     "api",
+			setUp: func(ctrl *gomock.Controller) (*MockRepositoryPrepareCase, *MockTemplateDefManagerPort, *MockSombraDefManagerPort, *MockVariableReaderPort, *MockRepositoryPort) {
+				mockRepo := NewMockRepositoryPort(ctrl)
+				mockRepoPrepare := NewMockRepositoryPrepareCase(ctrl)
+				mockTemplateDefManager := NewMockTemplateDefManagerPort(ctrl)
+				mockSombraDefManager := NewMockSombraDefManagerPort(ctrl)
+				mockVarReader := NewMockVariableReaderPort(ctrl)
+
+				mockRepo.EXPECT().Dir().Return("/tmp/repo").AnyTimes()
+				mockRepo.EXPECT().Clean().Return(nil)
+
+				mockRepoPrepare.EXPECT().
+					Prepare("github.com/user/repo", "").
+					Return(mockRepo, nil)
+
+				templateFile := entities.File("/tmp/repo/sombra-template.yaml")
+				mockTemplateDefManager.EXPECT().GetFile("/tmp/repo").Return(templateFile)
+				mockTemplateDefManager.EXPECT().Load(templateFile).Return(&entities.TemplateDef{}, nil)
+
+				expectedMappings := &entities.Mappings{"projectName": "test-project"}
+				mockVarReader.EXPECT().GetValues([]string(nil)).Return(expectedMappings)
+
+				sombraFile := entities.File("/path/to/target/sombra.yaml")
+				mockSombraDefManager.EXPECT().GetFile("/path/to/target").Return(sombraFile)
+				mockSombraDefManager.EXPECT().Load(sombraFile).Return(&entities.SombraDef{}, nil)
+
+				mockSombraDefManager.EXPECT().
+					Save(sombraFile, gomock.Any()).
+					DoAndReturn(func(fn entities.File, def *entities.SombraDef) error {
+						if len(def.Templates) != 1 || def.Templates[0].ID != "api" {
+							t.Errorf("Expected template with id api, got %+v", def.Templates)
+						}
+						return nil
+					})
+
+				return mockRepoPrepare, mockTemplateDefManager, mockSombraDefManager, mockVarReader, mockRepo
+			},
+			shouldError: false,
+		},
+		{
+			name:   "duplicate explicit id is rejected",
+			target: "/path/to/target",
+			uri:    "github.com/user/repo",
+			id:     "api",
+			setUp: func(ctrl *gomock.Controller) (*MockRepositoryPrepareCase, *MockTemplateDefManagerPort, *MockSombraDefManagerPort, *MockVariableReaderPort, *MockRepositoryPort) {
+				mockRepo := NewMockRepositoryPort(ctrl)
+				mockRepoPrepare := NewMockRepositoryPrepareCase(ctrl)
+				mockTemplateDefManager := NewMockTemplateDefManagerPort(ctrl)
+				mockSombraDefManager := NewMockSombraDefManagerPort(ctrl)
+				mockVarReader := NewMockVariableReaderPort(ctrl)
+
+				mockRepo.EXPECT().Dir().Return("/tmp/repo").AnyTimes()
+				mockRepo.EXPECT().Clean().Return(nil)
+
+				mockRepoPrepare.EXPECT().Prepare("github.com/user/repo", "").Return(mockRepo, nil)
+
+				templateFile := entities.File("/tmp/repo/sombra-template.yaml")
+				mockTemplateDefManager.EXPECT().GetFile("/tmp/repo").Return(templateFile)
+				mockTemplateDefManager.EXPECT().Load(templateFile).Return(&entities.TemplateDef{}, nil)
+
+				mockVarReader.EXPECT().GetValues([]string(nil)).Return(&entities.Mappings{})
+
+				sombraFile := entities.File("/path/to/target/sombra.yaml")
+				mockSombraDefManager.EXPECT().GetFile("/path/to/target").Return(sombraFile)
+				mockSombraDefManager.EXPECT().Load(sombraFile).Return(&entities.SombraDef{
+					Templates: []*entities.TemplateConfig{{ID: "api", URI: "github.com/other/repo"}},
+				}, nil)
+
+				return mockRepoPrepare, mockTemplateDefManager, mockSombraDefManager, mockVarReader, mockRepo
+			},
+			shouldError: true,
+			errorMsg:    `template id "api" already exists`,
+		},
+		{
+			name:   "invalid explicit id is rejected",
+			target: "/path/to/target",
+			uri:    "github.com/user/repo",
+			id:     "bad id!",
+			setUp: func(ctrl *gomock.Controller) (*MockRepositoryPrepareCase, *MockTemplateDefManagerPort, *MockSombraDefManagerPort, *MockVariableReaderPort, *MockRepositoryPort) {
+				mockRepo := NewMockRepositoryPort(ctrl)
+				mockRepoPrepare := NewMockRepositoryPrepareCase(ctrl)
+				mockTemplateDefManager := NewMockTemplateDefManagerPort(ctrl)
+				mockSombraDefManager := NewMockSombraDefManagerPort(ctrl)
+				mockVarReader := NewMockVariableReaderPort(ctrl)
+
+				mockRepo.EXPECT().Dir().Return("/tmp/repo").AnyTimes()
+				mockRepo.EXPECT().Clean().Return(nil)
+
+				mockRepoPrepare.EXPECT().Prepare("github.com/user/repo", "").Return(mockRepo, nil)
+
+				templateFile := entities.File("/tmp/repo/sombra-template.yaml")
+				mockTemplateDefManager.EXPECT().GetFile("/tmp/repo").Return(templateFile)
+				mockTemplateDefManager.EXPECT().Load(templateFile).Return(&entities.TemplateDef{}, nil)
+
+				mockVarReader.EXPECT().GetValues([]string(nil)).Return(&entities.Mappings{})
+
+				sombraFile := entities.File("/path/to/target/sombra.yaml")
+				mockSombraDefManager.EXPECT().GetFile("/path/to/target").Return(sombraFile)
+				mockSombraDefManager.EXPECT().Load(sombraFile).Return(&entities.SombraDef{}, nil)
+
+				return mockRepoPrepare, mockTemplateDefManager, mockSombraDefManager, mockVarReader, mockRepo
+			},
+			shouldError: true,
+			errorMsg:    `invalid template id "bad id!": use letters, numbers, underscores or dashes`,
+		},
+		{
+			name:   "generated id gets a suffix on collision",
+			target: "/path/to/target",
+			uri:    "github.com/user/repo",
+			setUp: func(ctrl *gomock.Controller) (*MockRepositoryPrepareCase, *MockTemplateDefManagerPort, *MockSombraDefManagerPort, *MockVariableReaderPort, *MockRepositoryPort) {
+				mockRepo := NewMockRepositoryPort(ctrl)
+				mockRepoPrepare := NewMockRepositoryPrepareCase(ctrl)
+				mockTemplateDefManager := NewMockTemplateDefManagerPort(ctrl)
+				mockSombraDefManager := NewMockSombraDefManagerPort(ctrl)
+				mockVarReader := NewMockVariableReaderPort(ctrl)
+
+				mockRepo.EXPECT().Dir().Return("/tmp/repo").AnyTimes()
+				mockRepo.EXPECT().Clean().Return(nil)
+
+				mockRepoPrepare.EXPECT().Prepare("github.com/user/repo", "").Return(mockRepo, nil)
+
+				templateFile := entities.File("/tmp/repo/sombra-template.yaml")
+				mockTemplateDefManager.EXPECT().GetFile("/tmp/repo").Return(templateFile)
+				mockTemplateDefManager.EXPECT().Load(templateFile).Return(&entities.TemplateDef{}, nil)
+
+				mockVarReader.EXPECT().GetValues([]string(nil)).Return(&entities.Mappings{})
+
+				sombraFile := entities.File("/path/to/target/sombra.yaml")
+				mockSombraDefManager.EXPECT().GetFile("/path/to/target").Return(sombraFile)
+				mockSombraDefManager.EXPECT().Load(sombraFile).Return(&entities.SombraDef{
+					Templates: []*entities.TemplateConfig{{ID: "repo", URI: "github.com/other/repo"}},
+				}, nil)
+
+				mockSombraDefManager.EXPECT().
+					Save(sombraFile, gomock.Any()).
+					DoAndReturn(func(fn entities.File, def *entities.SombraDef) error {
+						if len(def.Templates) != 2 || def.Templates[1].ID != "repo-2" {
+							t.Errorf("Expected generated id repo-2, got %+v", def.Templates)
+						}
+						return nil
+					})
+
+				return mockRepoPrepare, mockTemplateDefManager, mockSombraDefManager, mockVarReader, mockRepo
+			},
+			shouldError: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -339,7 +493,7 @@ func TestLocalInitInteractor_LocalInit(t *testing.T) {
 			)
 
 			// Execute
-			err := interactor.LocalInit(tt.target, tt.uri)
+			err := interactor.LocalInit(tt.target, tt.uri, tt.id)
 
 			// Check error
 			if (err != nil) != tt.shouldError {

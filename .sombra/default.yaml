@@ -2,19 +2,20 @@
 #
 # A new project is generated from a curated set of key files: the CLI entry
 # point, the composition root, the domain entities, the logger and the build /
-# docs / CI / QA scaffolding. The product's business logic and the rest of the
-# frameworks are intentionally left out, so the result is a lean structure to
-# build on rather than a project that compiles as-is. Module and command
-# references are renamed on copy; there is no `replace` and no external
-# template directory. The Go skeleton is marked `copy_only` so it is seeded by
-# `sombra local update --method copy` and left alone by `--method diff`.
+# docs / CI / QA scaffolding. The version command is copied as the sample
+# vertical slice (command, runtime and use case); the product's business logic
+# and the rest of the frameworks are intentionally left out, so the result is a
+# lean structure to build on. Module and command references are renamed on copy;
+# there is no `replace` and no external template directory. The Go skeleton is
+# marked `copy_only` so it is seeded by `sombra local update --method copy` and
+# left alone by `--method diff`.
 #
 # Optional components are toggled with variables:
 #   include_ci, include_docs, include_qa
 
 vars:
+  - github_user
   - project
-  - module
   - repository
   - author
   - include_ci
@@ -28,74 +29,37 @@ patterns:
   - pattern: "/**/*"
     abstract: true
     default:
-      "github.com/yunier-rojas/sombra-cli": "{{ .module }}"
-      "yunier-rojas/sombra-cli": "{{ .repository }}"
-      "sombra-cli": "{{ .project }}"
-      "Yunier Rojas García": "{{ .author }}"
-      "Yunier": "{{ .author }}"
+      "yunier-rojas": "{{ .github_user }}"
       "word:sombra": "{{ .project }}"
+      "sombra-cli": "{{ .repository }}"
+      "Yunier Rojas García": "{{ .author }}"
 
   # ---------------------------------------------------------------------------
   # Go skeleton: CLI entry point, composition root and domain entities.
+  # The version command is the sample vertical slice: CLI command, runtime and
+  # use case interactor wired through the composition root.
   # ---------------------------------------------------------------------------
   ## Copying main command file.
   - pattern: "/cmd/sombra/main.go"
     copy_only: true
-    content:
-      "Local": "Greet"
-      "subcommand:local": "subcommand:greet"
     block_directives: true
 
-  # Copying a subcommand tree.
-  - pattern: "/cmd/sombra/cmd_local.go"
+  # Copying the version command.
+  - pattern: "/cmd/sombra/cmd_version.go"
     copy_only: true
-    name:
-      "cmd_local.go": "cmd_greet.go"
-    content:
-      "Local": "Greet"
-      "LocalInit": "Greeter"
-      "subcommand:init": "subcommand:greeter"
-    block_directives: true
 
-  # Copying a subcommand leaf.
-  - pattern: "/cmd/sombra/cmd_local_init.go"
+  # Copying the version use case.
+  - pattern: "/internal/core/usecases/cli_version.go"
     copy_only: true
-    name:
-      "cmd_local_init.go": "cmd_greeter.go"
-    content:
-      "Local": "Greet"
-      "LocalInit": "Greeter"
-      "re:Template string (.*)": "Say string `arg:\"positional,required\" help:\"What to say\"`"
-      "args.Template": "args.Say"
-      "Failed to create local init runtime": "Failed to create greeter runtime"
-      "Failed to init local project": "Failed to greet"
-    block_directives: true
+
+  # Copying the version runtime.
+  - pattern: "/internal/runtime/version.go"
+    copy_only: true
 
   - pattern: "/internal/core/entities/sombra_entities.go"
     copy_only: true
     name:
       "sombra_entities.go": "entities.go"
-    block_directives: true
-
-  # Copying a basic use case.
-  - pattern: "/internal/core/usecases/cli_local_init.go"
-    copy_only: true
-    name:
-      "cli_local_init.go": "cli_greeter.go"
-    content:
-      "Local": "Greet"
-      "LocalInit": "Greeter"
-      "localInit": "greeter"
-
-  # Copying a basic use case.
-  - pattern: "/internal/core/usecases/project_init.go"
-    copy_only: true
-    name:
-      "project_init.go": "greet_say.go"
-    content:
-      "Local": "Greet"
-      "LocalInit": "Greeter"
-      "*LocalInitInteractor {": "GreeterCase { return nil"
     block_directives: true
 
   - pattern: "/internal/frameworks/logger/logger.go"
@@ -104,18 +68,6 @@ patterns:
   # Copying dependency injection
   - pattern: "/internal/runtime/container.go"
     copy_only: true
-    content:
-      "LocalInit": "Greeter"
-    block_directives: true
-
-  # Copying sample command runtime.
-  - pattern: "/internal/runtime/local_init.go"
-    copy_only: true
-    name:
-      "local_init.go": "greeter.go"
-    content:
-      "Local": "Greet"
-      "LocalInit": "Greeter"
     block_directives: true
 
   - pattern: "/go.mod"

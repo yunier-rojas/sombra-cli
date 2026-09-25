@@ -42,12 +42,24 @@ func NewDirectoryLocalDiffInteractor(
 	}
 }
 
-func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, uri, tag string, prune bool) ([]string, error) {
+func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, ref, tag string, prune bool) ([]string, error) {
 	// Read sombra file
 	sombraFile := diff.sombraDefManager.GetFile(target)
 	def, err := diff.sombraDefManager.Load(sombraFile)
 	if err != nil {
 		return nil, err
+	}
+
+	// Resolve the reference (id or URI) to the templates it points to
+	matches := entities.ResolveTemplates(def, ref)
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("no template registered with id or uri %q", ref)
+	}
+	uri := matches[0].URI
+	for _, template := range matches {
+		if template.URI != uri {
+			return nil, fmt.Errorf("template %q resolves to multiple repositories", ref)
+		}
 	}
 
 	// Download and prepare the version
@@ -79,10 +91,7 @@ func (diff *DirectoryLocalDiffInteractor) LocalUpdate(target, uri, tag string, p
 	var tpl *entities.TemplateDef
 	var fn entities.File
 	var removed []string
-	for _, template := range def.Templates {
-		if template.URI != uri {
-			continue
-		}
+	for _, template := range matches {
 		if template.Current != "" {
 			sig, err = diff.versionManager.Compare(template.Current, version)
 			if err != nil {

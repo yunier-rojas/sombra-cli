@@ -12,4 +12,7 @@ func TestContainerResolvesAllRuntimes(t *testing.T) {
 	if _, err := NewTemplateRuntime(); err != nil {
 		t.Fatalf("template init: %v", err)
 	}
+	if _, err := NewVersionRuntime("test"); err != nil {
+		t.Fatalf("version: %v", err)
+	}
 }

@@ -3,13 +3,15 @@ package usecases
 // sombra:skip
 
 import (
+	"fmt"
+
 	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 )
 
 // sombra:end
 
 type LocalInitCase interface {
-	LocalInit(target, uri string) error
+	LocalInit(target, uri, id string) error
 }
 
 // sombra:skip
@@ -25,7 +27,7 @@ type LocalInitInteractor struct {
 	varsSource         VariableReaderPort
 }
 
-func (l *LocalInitInteractor) LocalInit(target, uri string) error {
+func (l *LocalInitInteractor) LocalInit(target, uri, id string) error {
 	// Download and prepare the version
 	repo, err := l.repoPrepare.Prepare(uri, "")
 	if err != nil {
@@ -51,8 +53,19 @@ func (l *LocalInitInteractor) LocalInit(target, uri string) error {
 		return err
 	}
 
+	// Resolve the template id: explicit ids must be unique, generated ones get
+	// a numeric suffix when they collide.
+	if id == "" {
+		id = def.UniqueID(entities.DeriveID(uri))
+	} else if !entities.ValidID(id) {
+		return fmt.Errorf("invalid template id %q: use letters, numbers, underscores or dashes", id)
+	} else if def.HasID(id) {
+		return fmt.Errorf("template id %q already exists", id)
+	}
+
 	// Update sombra file
 	def.Templates = append(def.Templates, &entities.TemplateConfig{
+		ID:   id,
 		URI:  uri,
 		Vars: *mappings,
 	})

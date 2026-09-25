@@ -7,7 +7,7 @@ import (
 )
 
 type LocalUpdateArgs struct {
-	Template string `arg:"positional,required" help:"Git template to update"`
+	Template string `arg:"positional,required" help:"Template id or repo URL to update"`
 	Tag      string `arg:"--tag" help:"Git tag to use as template"`
 	Method   string `arg:"--method" help:"Method to use for updating the project. (copy|diff)" default:"copy"`
 	Prune    bool   `arg:"--prune" help:"Remove files matching a delete pattern (tombstones)"`

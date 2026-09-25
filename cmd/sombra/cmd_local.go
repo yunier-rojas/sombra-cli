@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/yunier-rojas/sombra-cli/internal/frameworks/logger"
-)
+import "github.com/alexflint/go-arg"
 
 type LocalSubcommand struct {
 	LocalInit *LocalInitArgs `arg:"subcommand:init"`
@@ -11,7 +9,7 @@ type LocalSubcommand struct {
 	// sombra:end
 }
 
-func (args *LocalSubcommand) Run() {
+func (args *LocalSubcommand) Run(parser *arg.Parser) {
 	switch {
 	case args.LocalInit != nil:
 		args.LocalInit.Run()
@@ -20,7 +18,6 @@ func (args *LocalSubcommand) Run() {
 		args.LocalUpdate.Run()
 	// sombra:end
 	default:
-		logger.Panic("command not supported")
+		_ = parser.FailSubcommand("no command specified", parser.SubcommandNames()...)
 	}
-
 }
