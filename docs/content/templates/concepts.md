@@ -277,20 +277,20 @@ parts:
 The `base` key is required but its `include` list may be empty. This lets a repository
 ship only optional parts. Every other part must contain at least one entry.
 
-Select parts with `--with`:
+Select parts with `--only`:
 
 ```bash
-sombra local init <uri> --with base,ci
-sombra local update <id> --with ci
+sombra local init <uri> --only base,ci
+sombra local update <id> --only ci
 ```
 
-`--with` replaces the selection. It does not add to it. `base` is only implicit when
-no part is named. In these examples, the first command copies `base` and `ci`. The
-second command copies `ci` only and omits the base files.
+`--only` replaces the selection. It does not add to it. `base` is only implicit when
+no part is named during an update. In these examples, the first command selects `base`
+and `ci`. The second command selects `ci` only and omits the base files.
 
-The selected parts are stored in the target's `sombra.yaml`. Updating without
-`--with` uses the stored selection. When the stored selection is empty, Sombra uses
-`base`.
+`sombra local init` without `--only` selects every part. The selected parts are stored
+in the target's `sombra.yaml`. Updating without `--only` uses the stored selection.
+When the stored selection is empty, Sombra uses `base`.
 
 Two selected entries that select the same file with the same specificity fail the
 update. Keep overlapping parts disjoint, or make one entry more specific.

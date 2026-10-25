@@ -186,11 +186,11 @@ parts:
       - /mk/qa.mk
 ```
 
-Consumers select them. `--with` replaces the selection, so name `base` when you want
-the default files too:
+Consumers receive every part by default. `--only` replaces the selection, so name
+`base` when you want the base files too:
 
 ```bash
-sombra local init https://github.com/acme/app.git --with base,ci,docs
+sombra local init https://github.com/acme/app.git --only base,ci,docs
 ```
 
 ---

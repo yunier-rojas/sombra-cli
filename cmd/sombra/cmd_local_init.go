@@ -14,7 +14,7 @@ type LocalInitArgs struct {
 	Template string `arg:"positional,required" help:"Git repository to use as template"`
 
 	ID   string   `arg:"--id" help:"Unique id for the template (generated from the URI when omitted)"`
-	With []string `arg:"--with,separate" help:"Template parts to enable (default: base; repeatable or comma separated)"`
+	Only []string `arg:"--only,separate" help:"Template parts to enable (default: all; repeatable or comma separated)"`
 }
 
 func (args *LocalInitArgs) Run() {
@@ -30,7 +30,10 @@ func (args *LocalInitArgs) Run() {
 		os.Exit(1)
 	}
 
-	parts := splitParts(args.With)
+	var parts []string
+	if args.Only != nil {
+		parts = splitParts(args.Only)
+	}
 	noteMissingBase(parts)
 	if err := rt.UseCase.DoLocalInit(cwd, args.Template, args.ID, parts); err != nil {
 		logger.Error("Failed to init local project", err)
@@ -63,5 +66,5 @@ func noteMissingBase(parts []string) {
 			return
 		}
 	}
-	fmt.Fprintln(os.Stderr, "note: base is not selected; pass --with base,... to include it")
+	fmt.Fprintln(os.Stderr, "note: base is not selected; pass --only base,... to include it")
 }

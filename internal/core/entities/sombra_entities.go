@@ -58,7 +58,7 @@ type Entry struct {
 	Rewrite    *bool  `yaml:"rewrite,omitempty"`
 }
 
-// Part is an optional bundle of entries selected with --with.
+// Part is an optional bundle of entries selected with --only.
 type Part struct {
 	Description string  `yaml:"description,omitempty"`
 	Include     []Entry `yaml:"include"`

@@ -8,6 +8,8 @@ import (
 )
 
 type LocalInitCase interface {
+	// LocalInit records a template in the target project. A nil parts slice
+	// selects every part declared by the template.
 	LocalInit(target, uri, id string, parts []string) error
 }
 
@@ -34,6 +36,9 @@ func (l *LocalInitInteractor) LocalInit(target, uri, id string, parts []string) 
 		return err
 	}
 
+	if parts == nil {
+		parts = partNames(def)
+	}
 	parts = normalizeParts(parts)
 	if _, err := activeEntries(def, parts); err != nil {
 		return err

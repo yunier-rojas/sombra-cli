@@ -70,15 +70,16 @@ Unknown fields are errors.
 
 ## Parts
 
-Every template declares a required `base` part and may declare more. `base` is selected
-when `parts` is omitted or empty. Selecting parts records them in `sombra.yaml`:
+Every template declares a required `base` part and may declare more. Selecting parts
+records them in `sombra.yaml`:
 
 ```bash
-sombra local init https://github.com/acme/app-template.git --with base,ci,docs
+sombra local init https://github.com/acme/app-template.git --only base,ci,docs
 ```
 
-`--with` replaces the selection. `base` is only selected when named. For example,
-`--with ci` copies `ci` files only.
+`sombra local init` selects every part when `--only` is omitted. `--only` replaces the
+selection. `base` is only selected when named. For example, `--only ci` copies `ci`
+files only.
 
 Later updates use the stored selection:
 
@@ -86,12 +87,14 @@ Later updates use the stored selection:
 sombra local update app
 ```
 
-Replace the selection with `--with`:
+When the stored selection is empty, updates use `base`.
+
+Replace the selection with `--only`:
 
 ```bash
-sombra local update app --with ci
-sombra local update app --with base,ci
-sombra local update app --with ''
+sombra local update app --only ci
+sombra local update app --only base,ci
+sombra local update app --only ''
 ```
 
 An empty value resets the selection to `base`.
@@ -152,7 +155,7 @@ specific update.
 Register a template:
 
 ```bash
-sombra local init https://github.com/acme/app-template.git --id app --with base,ci
+sombra local init https://github.com/acme/app-template.git --id app --only base,ci
 ```
 
 Apply or refresh it:
