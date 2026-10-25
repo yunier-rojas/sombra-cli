@@ -1,0 +1,15 @@
+id: sg-rule-references-adr
+language: yml
+severity: error
+message: Every ast-grep rule must name the ADR that created it under metadata.adr.
+files:
+  - qa/sg/rules/*.yml
+metadata:
+  adr: adr/process/2026-10-01-document-decisions-as-adrs.md
+rule:
+  kind: document
+  not:
+    has:
+      stopBy: end
+      kind: block_mapping_pair
+      regex: '(?s)metadata:.*adr:'

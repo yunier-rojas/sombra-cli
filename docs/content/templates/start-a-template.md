@@ -7,239 +7,246 @@ aliases:
 
 ## Overview
 
-This guide walks you through creating a template from an existing codebase — no
-changes to the source code required. The worked example is this repository's definition:
-[`.sombra/default.yaml`](https://github.com/yunier-rojas/sombra-cli/blob/main/.sombra/default.yaml)
-in this repository, which turns `sombra-cli` into a reusable Go project skeleton.
+This guide turns an existing repository into a template. The example is this
+repository's own definition:
+[`.sombra/template.yaml`](https://github.com/yunier-rojas/sombra-cli/blob/main/.sombra/template.yaml).
 
-Use this when you want to:
-
-- Reuse a production-ready project as a starting point
-- Share best practices and config across multiple teams or services
-- Turn internal tooling into reusable templates
+The result copies a curated set of files, renames the project identity and leaves the
+rest of the repository alone. The source repository keeps working as a normal project.
 
 ---
 
-## The example
+## Step 1: Generate a definition
 
-`sombra-cli` is a Go CLI. Its template copies a curated set of files — the CLI entry
-point, the composition root, the domain entities, the logger and the build / docs / CI /
-QA scaffolding — into a new project and renames the module, commands and identifiers
-along the way. The product's business logic and the rest of the frameworks are left out
-on purpose, so the result is a lean structure to build on rather than a project that
-compiles as-is.
+Run:
 
-Every step below is taken from that file.
-
----
-
-## Step 1: Create `.sombra/default.yaml`
-
-Add the definition at the root of the repository you want to reuse:
-
-```text
-.
-└── .sombra/
-    └── default.yaml
+```bash
+sombra template init .
 ```
 
-Everything inside `.sombra/` is treated as template metadata: it is never copied to the
-target project and can hold reference material for the template itself.
+The command writes `.sombra/template.yaml`. It uses tracked files from git, or walks
+the directory when git is not available.
+
+The generated file contains:
+
+- a required `parts.base` with entries grouped by top level directory;
+- `vars` seeded from `go.mod`, the git remote and the git user;
+- an ordered rewrite list for the detected identity;
+- your `--exclude` patterns.
+
+Review the file before continuing. Remove business logic from `parts.base` or add it to
+`exclude`. The generator is conservative: a new top level directory is not copied
+until you add it.
+
+Useful flags:
+
+```bash
+sombra template init --only '/cmd/**' --only '/internal/**' .
+sombra template init --exclude '*.log' --exclude '/secrets/**' .
+sombra template init --dry-run .
+```
+
+`--only` accepts globs and writes concrete paths. `--dry-run` prints the definition
+without writing it. `--force` overwrites an existing definition.
 
 ---
 
-## Step 2: Declare the variables
+## Step 2: Declare variables
 
-Variables are the questions `sombra local init` asks. Here the answers are the new
-project's identity plus three switches that enable optional components:
+Keep the variables the consumer must answer. Remove the ones that are not used.
 
 ```yaml
 vars:
-  - project
-  - module
-  - repository
-  - author
-  - include_ci
-  - include_docs
-  - include_qa
+  project:
+    description: Project and command name
+    default: app
+  module:
+    description: Go module path
+    default: example.com/app
+  author: {}
 ```
 
-The values are stored in the target project's `sombra.yaml` and reused on every update,
-so consumers only answer once.
+`sombra local init` prompts in alphabetical order and offers the defaults.
 
 ---
 
-## Step 3: Apply global renames with an abstract pattern
+## Step 3: Choose seed and sync files
 
-An `abstract: true` pattern contributes mappings to every file it matches but never
-includes a file on its own. This one turns the template's own names into the consumer's:
+Most scaffolding should be `sync`. Files the consumer will edit should be `seed`.
 
 ```yaml
-patterns:
-  - pattern: "/**/*"
-    abstract: true
-    default:
-      "github.com/yunier-rojas/sombra-cli": "{{ .module }}"
-      "yunier-rojas/sombra-cli": "{{ .repository }}"
-      "sombra-cli": "{{ .project }}"
-      "Yunier Rojas García": "{{ .author }}"
-      "Yunier": "{{ .author }}"
-      "word:sombra": "{{ .project }}"
+parts:
+  base:
+    include:
+      - /Makefile
+      - /mk/build.mk
+      - /mk/test.mk
+      - /go.mod
+
+      - path: /cmd/app/main.go
+        mode: seed
+        directives: true
+      - path: /internal/runtime/container.go
+        mode: seed
 ```
 
-`word:` only matches whole tokens, so `sombra-cli` and `sombra.yaml` are left for the
-longer, more specific keys instead of being mangled by the generic `sombra` rule.
+`sync` updates the file when it is unmodified. `seed` writes it once.
 
 ---
 
-## Step 4: Copy the Go skeleton
+## Step 4: Write the rewrites
 
-The Go files are the heart of the template. Each pattern renames its file or the
-identifiers inside it:
+Start with the full identity, then the less specific names. The first rule wins for
+overlapping text because rules run in order.
 
 ```yaml
-  - pattern: "/cmd/sombra/main.go"
-    copy_only: true
-    content:
-      "Local": "Greet"
-      "subcommand:local": "subcommand:greet"
-    block_directives: true
+rewrites:
+  - find: "github.com/acme/app"
+    replace: "{{ .module }}"
+    in: [path, name, content]
 
-  - pattern: "/cmd/sombra/cmd_local_init.go"
-    copy_only: true
-    name:
-      "cmd_local_init.go": "cmd_greeter.go"
-    content:
-      "LocalInit": "Greeter"
-      "args.Template": "args.Say"
-    block_directives: true
+  - find: "acme/app"
+    replace: "{{ .repository }}"
+    in: [path, name, content]
+
+  - find: "app"
+    as: word
+    ignore_case: true
+    replace: "{{ .project }}"
+    in: [path, name, content]
+
+  - files: [/internal/core/entities/app.go]
+    find: "app.go"
+    replace: "entities.go"
+    in: [name]
 ```
 
-`copy_only: true` ties the pattern to the **copy** update method: the skeleton is
-seeded by `sombra local update --method copy` (the default) and ignored by
-`--method diff`, so routine updates never overwrite code the consumer has edited. See
-[`copy_only`](concepts.md#copy_only-copy-method-only-patterns).
+Use `word` for short names. It avoids changing `app-cli`, `app.yaml` or `app_name`
+when you only meant the bare name.
 
 ---
 
 ## Step 5: Hide template-only content
 
-The source repository contains code that only exists to make it a working project.
-Wrap those regions with `sombra:skip` / `sombra:end` markers and enable the block on
-the owning pattern:
+Two options:
+
+### Directives
+
+Enable directives on the file and wrap the region:
 
 ```yaml
-  - pattern: "/cmd/sombra/main.go"
-    block_directives: true
+- path: /cmd/app/main.go
+  mode: seed
+  directives: true
 ```
 
 ```go
-var args struct {
-	Local *LocalSubcommand `arg:"subcommand:local"`
-	// sombra:skip
-	Template *TemplateSubcommand `arg:"subcommand:template"`
-	// sombra:end
-}
+// sombra:skip
+templateOnly := true
+// sombra:end
 ```
 
-Here the generated project keeps the `local` command but never exposes the
-template-management command. The markers and every line between them are removed when
-the file is copied. Markers can nest, and block directives are opt-in per pattern so
-ordinary `sombra:` text is copied untouched. See
-[In-file Block Directives](concepts.md#in-file-block-directives).
+The marker lines and the block are removed from the copy.
+
+### Overlays
+
+When a whole file differs, place the reduced version under `.sombra/overlay/`:
+
+```text
+.sombra/overlay/README.md
+```
+
+The overlay is rendered with the variables and used instead of the repository's
+`README.md`.
 
 ---
 
-## Step 6: Add scaffolding and optional components
+## Step 6: Add optional parts
 
-Everything else is declared the same way. The build and repository files are copied as
-they are, with the project name substituted where it appears:
-
-```yaml
-  - pattern: "/Makefile"
-    content:
-      "word:sombra": "{{ .project }}"
-
-  - pattern: "/.editorconfig"
-  - pattern: "/.gitignore"
-  - pattern: "/LICENSE"
-```
-
-Optional components are gated with `when`, a Go template expression evaluated against
-the variables before the definition is parsed:
+`base` is required. Move optional trees into other parts:
 
 ```yaml
-  - pattern: "/.github/**"
-    when: '{{ eq .include_ci "true" }}'
-    content:
-      "word-ci:sombra": "{{ .project }}"
-      "sombra-": "{{ .project }}-"
-
-  - pattern: "/docs/**"
-    abstract: true
-    when: '{{ eq .include_docs "true" }}'
-
-  - pattern: "/mk/qa.mk"
-    when: '{{ eq .include_qa "true" }}'
+parts:
+  base:
+    include:
+      - /Makefile
+  ci:
+    description: GitHub Actions workflows
+    include:
+      - /.github/
+  docs:
+    description: Hugo documentation site
+    include:
+      - /docs/
+      - /mk/docs.mk
+  qa:
+    description: QA configuration
+    include:
+      - /qa/
+      - /mk/qa.mk
 ```
 
-When the expression is false the pattern is skipped entirely, so optional trees such as
-`.github/`, `docs/` and `qa/` need no `except` denylist. See
-[`when`](concepts.md#when-conditional-patterns) and the full
-[Pattern Field Reference](concepts.md#pattern-field-reference).
-
----
-
-## Step 7: Tag a release
-
-To make the template available for versioned use:
+Consumers select them. `--with` replaces the selection, so name `base` when you want
+the default files too:
 
 ```bash
+sombra local init https://github.com/acme/app.git --with base,ci,docs
+```
+
+---
+
+## Step 7: Test in a sandbox
+
+Create a throwaway directory with a `sombra.yaml` and run:
+
+```bash
+mkdir /tmp/sandbox && cd /tmp/sandbox
+sombra local update --dry-run <id-or-uri>
+sombra local update <id-or-uri>
+```
+
+Check:
+
+- the expected files are created;
+- paths and names are renamed;
+- skipped regions are gone;
+- `seed` files are present;
+- selected parts are copied;
+- unselected parts are not.
+
+Run the update again. It should report `unchanged` or `kept`, with no conflicts.
+
+Edit a `sync` file and run the update again. It should report a conflict. Restore the
+file, or use `--force` when you meant to overwrite.
+
+---
+
+## Step 8: Tag a release
+
+```bash
+git add .sombra/template.yaml
+git commit -m "Add Sombra template"
 git tag v1.0.0
-git push origin v1.0.0
+git push origin main --tags
 ```
 
----
-
-## Using the template
-
-Consumers register it and answer the variables:
+Consumers can now pin the tag:
 
 ```bash
-sombra local init https://github.com/yunier-rojas/sombra-cli.git
+sombra local update v1.0.0 <id-or-uri>
 ```
-
-That records them in the target project's `sombra.yaml`:
-
-```yaml
-templates:
-  - uri: https://github.com/yunier-rojas/sombra-cli.git
-    vars:
-      project: hello-cli
-      module: github.com/acme/hello-cli
-      repository: acme/hello-cli
-      author: Acme Inc.
-      include_ci: "true"
-      include_docs: "false"
-      include_qa: "false"
-```
-
-Running `sombra local update https://github.com/yunier-rojas/sombra-cli.git` then copies the files and
-records the applied tag in `current`. Because the Go skeleton is `copy_only`, the first
-`--method copy` seeds it and later `--method diff` updates everything else.
 
 ---
 
 ## Summary
 
-To convert any repo into a template:
+1. Generate with `sombra template init`.
+2. Curate `parts.base` and `exclude`.
+3. Declare `vars`.
+4. Mark editable files `seed`.
+5. Write ordered rewrites.
+6. Hide template-only content with directives or overlays.
+7. Move optional trees into parts.
+8. Test in a sandbox, then tag.
 
-1. Add `.sombra/default.yaml`
-2. Declare `vars` for the consumer to answer
-3. Rename globally with an `abstract` pattern
-4. Mark seed-once files `copy_only` and map their `name` / `content`
-5. Hide template-only code with `sombra:skip` block directives
-6. Gate optional components with `when`
-7. Tag a release and consume it with `sombra local init`
-
-Next: learn about [Template Concepts](concepts.md) to understand pattern structure in depth.
+Next: [Template Concepts](concepts.md) and [Best Practices](best-practices.md).

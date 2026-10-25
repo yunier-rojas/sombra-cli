@@ -1,0 +1,3 @@
+# Third-party libraries with more than one owner. This list may only shrink.
+gopkg.in/yaml.v3|lock,sombra,templates
+github.com/bmatcuk/doublestar/v4|files,templates

@@ -1,0 +1,29 @@
+imports-checks:
+  # __MODULE__ is replaced by qa/check-imports.sh with the value of `go list -m`.
+  # Core packages must stay free of technology. See
+  # adr/technical/2026-10-04-technology-proliferation.md. Do not loosen this file; add a
+  # port and an adapter instead.
+
+  - folder: internal/core/entities
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          # these are necessary for type conversion
+          - fmt
+          - strings
+
+  - folder: internal/core/usecases
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - fmt
+          - path
+          - sort
+          - strings
+
+          # sombra
+          - __MODULE__/internal/core/entities

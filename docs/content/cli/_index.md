@@ -11,5 +11,5 @@ cascade:
 
 ## Start Here
 
-- [`sombra.yaml` file](sombra-file.md) — Configure how your project applies one or more templates.
-- [CLI Commands](commands.md) — Reference for all `sombra` commands and flags.
+- [`sombra.yaml` file](sombra-file.md): Configure how your project applies one or more templates.
+- [CLI Commands](commands.md): Reference for all `sombra` commands and flags.

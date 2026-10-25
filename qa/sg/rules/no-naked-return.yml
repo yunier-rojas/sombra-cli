@@ -1,0 +1,36 @@
+id: no-naked-return
+language: go
+severity: error
+message: Do not use naked returns.
+files:
+  - internal/**/*.go
+  - cmd/**/*.go
+ignores:
+  - "**/*_test.go"
+metadata:
+  adr: adr/technical/2026-10-02-error-handling.md
+rule:
+  kind: return_statement
+  not:
+    has:
+      kind: expression_list
+  inside:
+    any:
+      - kind: function_declaration
+        has:
+          field: result
+          kind: parameter_list
+          has:
+            kind: parameter_declaration
+            has:
+              field: name
+              kind: identifier
+      - kind: method_declaration
+        has:
+          field: result
+          kind: parameter_list
+          has:
+            kind: parameter_declaration
+            has:
+              field: name
+              kind: identifier

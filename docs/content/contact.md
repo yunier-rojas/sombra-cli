@@ -14,8 +14,8 @@ Feel free to reach out if you're:
 
 ## Contact Methods
 
-- **LinkedIn** — [Yunier Rojas García](https://www.linkedin.com/in/yunier-rojas-garc%C3%ADa/)
-- **GitHub Issues** — [Open an Issue](https://github.com/yunier-rojas/sombra-cli/issues)
+- **LinkedIn**: [Yunier Rojas García](https://www.linkedin.com/in/yunier-rojas-garc%C3%ADa/)
+- **GitHub Issues**: [Open an Issue](https://github.com/yunier-rojas/sombra-cli/issues)
 
 ---
 

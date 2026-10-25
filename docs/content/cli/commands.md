@@ -7,16 +7,16 @@ aliases:
 
 ## Overview
 
-`sombra` provides commands to generate and update projects from templates, and to create templates from existing projects.
+`sombra` generates and updates projects from templates and turns existing projects
+into templates.
 
-Run `sombra --help` at any time to view global help.
+Run `sombra --help` to see the global help.
 
 ---
 
 ## `version`
 
-Print the `sombra` version. The value is the release name or Git tag the binary
-was built from. A binary built without version information prints `dev`.
+Print the Sombra version. A binary built without version information prints `dev`.
 
 ```bash
 sombra version
@@ -26,98 +26,143 @@ sombra version
 
 ## `local` Commands
 
-Used to apply and update templates in your working project.
+Used to apply and update templates in a project.
 
 ### `sombra local init`
 
-Register a template in the project's `sombra.yaml`. The command resolves the template
-definition, prompts for the variables it declares, and creates or updates
-`sombra.yaml` with the template URI and the captured values. It does not copy files;
-run `sombra local update` to apply the template.
+Register a template in the project's `sombra.yaml`. The command loads the template
+definition, validates the selected parts, prompts for variables and writes
+`sombra.yaml`. It does not copy files.
 
 ```bash
-sombra local init [--id ID] TEMPLATE
+sombra local init [--id ID] [--with PART]... TEMPLATE
 ```
 
-#### Positional:
+#### Positional
 
-* `TEMPLATE`: Git repo URL of the template
+- `TEMPLATE`: Git repository URL or local path.
 
-#### Options:
+#### Options
 
-* `--id`: Unique short name for the template. When omitted, `sombra` derives it
-  from the repository name. The id only allows letters, numbers, underscores, and
-  dashes. An id given explicitly must be unique; a derived id gets a numeric suffix
-  on collision
-* `--help, -h`: Show help
+- `--id`: Unique short name. Derived from the URI when omitted.
+- `--with`: Parts to select. Repeat the flag or use commas: `--with base,ci,docs`.
+  When omitted, `base` is selected. When you name any part, `base` is only selected
+  if you name it too.
+- `--help, -h`: Show help.
 
-#### Example:
+#### Example
 
 ```bash
-sombra local init https://github.com/your-org/your-template.git --id app
+sombra local init https://github.com/acme/app-template.git --id app --with base,ci,docs
 ```
+
+Prompts print the variable description and the default. Press Enter to accept the
+default. A variable without a default requires a value.
 
 ---
 
 ### `sombra local update`
 
-Apply (or refresh) a template that is registered in `sombra.yaml`. Files are copied
-using the variables stored for that template, and its `current` version is updated to
-the resolved tag.
+Apply or refresh a registered template.
 
 ```bash
-sombra local update [--tag TAG] [--method METHOD] [--prune] TEMPLATE
+sombra local update [--tag TAG] [--with PART]... [--dry-run] [--force] [--adopt] [--prune] TEMPLATE
 ```
 
-#### Positional:
+#### Positional
 
-* `TEMPLATE`: Id or Git repo URL of a template already registered by `sombra local init`.
-  An id is matched first; the URI is used as a fallback so older entries without an id
-  keep working.
+- `TEMPLATE`: Template id or URI already registered with `sombra local init`.
 
-#### Options:
+#### Options
 
-* `--tag`: Specific git tag or version to use (defaults to the latest tag)
-* `--method`: `copy` (default) or `diff` for smarter merging. `diff` ignores patterns marked [`copy_only`](../templates/concepts.md#copy_only-copy-method-only-patterns)
-* `--prune`: Remove target files matching a `delete: true` pattern
-* `--help, -h`: Show help
+- `--tag`: Tag or commit to use. Defaults to the latest semantic tag.
+- `--with`: Replace the stored parts. Repeat or use commas. `base` is only selected
+  when named. An empty value resets the selection to `base`.
+- `--dry-run`: Print the plan. No files are written and the lock is not changed.
+- `--force`: Overwrite files even when they were modified or are not managed yet.
+- `--adopt`: Record existing files whose content already matches the template. No
+  files are overwritten. Adopted files are never pruned.
+- `--prune`: Remove template files that are no longer produced and are unmodified.
+- `--help, -h`: Show help.
 
-#### Example:
+#### Output
+
+Every destination is reported as one of:
+
+`created`, `updated`, `unchanged`, `kept`, `adopted`, `removed`, `prunable`,
+`conflict`.
+
+`prunable` files are only reported. Run again with `--prune` to remove them.
+`conflict` files are never overwritten. The command exits with a non-zero status when
+conflicts remain, including in a dry run.
+
+#### Examples
 
 ```bash
-sombra local update --tag v1.2.0 --method diff --prune app
+sombra local update app
+sombra local update app --tag v1.2.0
+sombra local update app --with ci --dry-run
+sombra local update app --prune
+sombra local update app --adopt
 ```
+
+#### Conflict handling
+
+A conflict means one of:
+
+- the file exists and is not recorded in `.sombra/lock.yaml`;
+- the file was edited since the last update;
+- a file that is no longer produced was edited, so `--prune` keeps it.
+
+Resolve a conflict by restoring the file, by adopting it when the content matches, or
+by forcing an overwrite when that is the intent.
 
 ---
 
 ## `template` Commands
 
-Used to turn existing codebases into reusable templates.
+Used to turn an existing project into a template.
 
 ### `sombra template init`
 
-Initialize a `.sombra/default.yaml` template from an existing project.
+Generate `.sombra/template.yaml`.
 
 ```bash
-sombra template init [--exclude PATTERN] [--only PATTERN] [DIR]
+sombra template init [--only GLOB]... [--exclude GLOB]... [--force] [--dry-run] [--include-untracked] [DIR]
 ```
 
-#### Positional:
+#### Positional
 
-* `DIR`: Path to the project directory to convert (default: current dir)
+- `DIR`: Project directory. Defaults to the current directory.
 
-#### Options:
+#### Options
 
-* `--exclude, -e`: Glob to exclude files (e.g. `"*.pyc"`)
-* `--only, -o`: Glob to include files (default: all files, `/**/*`)
-* `--help, -h`: Show help
+- `--only, -o`: Glob selecting files. Repeatable. The generated definition contains
+  concrete paths, not globs.
+- `--exclude, -e`: Glob excluding files. Repeatable. Written to `exclude`.
+- `--force`: Overwrite an existing definition.
+- `--dry-run`: Print the definition without writing it.
+- `--include-untracked`: Include untracked files. Only applies to git repositories.
+- `--help, -h`: Show help.
 
-#### Example:
+#### Behavior
+
+- In a git repository with commits, Sombra lists tracked files with `git ls-files`.
+  Ignored and untracked files are excluded by default.
+- Without git, Sombra walks the directory and skips common build and cache
+  directories.
+- Files are grouped into top level entries such as `/cmd/` and `/Makefile`.
+- `.sombra/` and the root `sombra.yaml` are never included.
+- Variables and rewrites are seeded from `go.mod`, the git remote and the git user.
+  A missing value produces a warning and no rewrite for that value.
+- The generated definition is a starting point. Review `parts.base`, `exclude` and
+  `rewrites` before tagging a release.
+
+#### Examples
 
 ```bash
-sombra template init --exclude "README.md" ./my-project
+sombra template init .
+sombra template init --only '/cmd/**' --only '/internal/**' .
+sombra template init --exclude '*.log' --exclude '/secrets/**' .
+sombra template init --dry-run .
 ```
-
----
-
-For detailed usage, see the [`sombra.yaml` file](sombra-file.md) or [Template Guide](../templates/index.md).

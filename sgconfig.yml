@@ -1,0 +1,8 @@
+ruleDirs:
+  - qa/sg/rules
+
+languageGlobs:
+  html:
+    - "**/*.svg"
+  json:
+    - "**/*.webmanifest"

@@ -1,0 +1,15 @@
+id: adr-has-consequences
+language: markdown
+severity: error
+message: Every ADR must contain a "Consequences" section.
+files:
+  - adr/**/*.md
+metadata:
+  adr: adr/process/2026-10-01-document-decisions-as-adrs.md
+rule:
+  kind: document
+  not:
+    has:
+      stopBy: end
+      kind: atx_heading
+      regex: '## Consequences'

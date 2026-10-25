@@ -1,0 +1,13 @@
+id: adr-no-date-in-title
+language: markdown
+severity: error
+message: Do not put the date in the ADR title, only in the file name.
+files:
+  - adr/**/*.md
+metadata:
+  adr: adr/process/2026-10-01-document-decisions-as-adrs.md
+rule:
+  pattern: '# $TITLE'
+constraints:
+  TITLE:
+    regex: '\d{4}-\d{2}-\d{2}'

@@ -1,16 +1,19 @@
 package usecases
 
-type RepositoryPort interface {
+type RepositoryLifecyclePort interface {
 	Clone() error
 	Clean() error
+}
+
+type RepositoryCheckoutPort interface {
 	Dir() string
 	Use(version string) (string, error)
-	Diff(commit string) ([]byte, error)
 	GetTags() ([]string, error)
 }
 
-type PatchPort interface {
-	Apply(dir string, patch []byte) error
+type RepositoryPort interface {
+	RepositoryLifecyclePort
+	RepositoryCheckoutPort
 }
 
 type RepositoryFactory func(uri string) (RepositoryPort, error)
