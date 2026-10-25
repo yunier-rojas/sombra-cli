@@ -70,10 +70,11 @@ commit the file and tag a release.
 In a new project:
 
 ```bash
-sombra local init https://github.com/acme/app-template.git --id app --with base,ci
+sombra local init https://github.com/acme/app-template.git --id app --only base,ci
 ```
 
-This prompts for the template variables and writes `sombra.yaml`.
+This prompts for the template variables and writes `sombra.yaml`. Without `--only`,
+every part is selected.
 
 ### 3. Apply and update
 

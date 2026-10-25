@@ -35,7 +35,7 @@ definition, validates the selected parts, prompts for variables and writes
 `sombra.yaml`. It does not copy files.
 
 ```bash
-sombra local init [--id ID] [--with PART]... TEMPLATE
+sombra local init [--id ID] [--only PART]... TEMPLATE
 ```
 
 #### Positional
@@ -45,15 +45,15 @@ sombra local init [--id ID] [--with PART]... TEMPLATE
 #### Options
 
 - `--id`: Unique short name. Derived from the URI when omitted.
-- `--with`: Parts to select. Repeat the flag or use commas: `--with base,ci,docs`.
-  When omitted, `base` is selected. When you name any part, `base` is only selected
-  if you name it too.
+- `--only`: Parts to select. Repeat the flag or use commas: `--only base,ci,docs`.
+  When omitted, every part is selected. When you name any part, `base` is only
+  selected if you name it too.
 - `--help, -h`: Show help.
 
 #### Example
 
 ```bash
-sombra local init https://github.com/acme/app-template.git --id app --with base,ci,docs
+sombra local init https://github.com/acme/app-template.git --id app --only base,ci,docs
 ```
 
 Prompts print the variable description and the default. Press Enter to accept the
@@ -66,7 +66,7 @@ default. A variable without a default requires a value.
 Apply or refresh a registered template.
 
 ```bash
-sombra local update [--tag TAG] [--with PART]... [--dry-run] [--force] [--adopt] [--prune] TEMPLATE
+sombra local update [--tag TAG] [--only PART]... [--dry-run] [--force] [--adopt] [--prune] TEMPLATE
 ```
 
 #### Positional
@@ -76,7 +76,7 @@ sombra local update [--tag TAG] [--with PART]... [--dry-run] [--force] [--adopt]
 #### Options
 
 - `--tag`: Tag or commit to use. Defaults to the latest semantic tag.
-- `--with`: Replace the stored parts. Repeat or use commas. `base` is only selected
+- `--only`: Replace the stored parts. Repeat or use commas. `base` is only selected
   when named. An empty value resets the selection to `base`.
 - `--dry-run`: Print the plan. No files are written and the lock is not changed.
 - `--force`: Overwrite files even when they were modified or are not managed yet.
@@ -101,7 +101,7 @@ conflicts remain, including in a dry run.
 ```bash
 sombra local update app
 sombra local update app --tag v1.2.0
-sombra local update app --with ci --dry-run
+sombra local update app --only ci --dry-run
 sombra local update app --prune
 sombra local update app --adopt
 ```

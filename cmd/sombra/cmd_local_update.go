@@ -12,7 +12,7 @@ import (
 type LocalUpdateArgs struct {
 	Template string   `arg:"positional,required" help:"Template id or repo URL to update"`
 	Tag      string   `arg:"--tag" help:"Git tag to use as template"`
-	With     []string `arg:"--with,separate" help:"Parts to enable, replacing the stored selection (default: base; repeatable or comma separated)"`
+	Only     []string `arg:"--only,separate" help:"Parts to enable, replacing the stored selection (repeatable or comma separated)"`
 	DryRun   bool     `arg:"--dry-run" help:"Print the plan without writing files"`
 	Force    bool     `arg:"--force" help:"Overwrite files even when they were modified"`
 	Adopt    bool     `arg:"--adopt" help:"Record existing files whose content already matches"`
@@ -32,12 +32,12 @@ func (args *LocalUpdateArgs) Run() {
 		os.Exit(1)
 	}
 
-	parts := splitParts(args.With)
+	parts := splitParts(args.Only)
 	noteMissingBase(parts)
 	result, err := rt.UseCase.LocalUpdate(cwd, args.Template, entities.LocalUpdateOptions{
 		Tag:      args.Tag,
 		Parts:    parts,
-		PartsSet: len(args.With) > 0,
+		PartsSet: len(args.Only) > 0,
 		Prune:    args.Prune,
 		Force:    args.Force,
 		Adopt:    args.Adopt,

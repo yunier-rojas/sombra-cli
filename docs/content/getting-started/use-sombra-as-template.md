@@ -58,12 +58,12 @@ Create the target directory and register the template with the parts you want:
 ```bash
 mkdir hello-cli
 cd hello-cli
-sombra local init https://github.com/yunier-rojas/sombra-cli.git --id starter --with base,ci
+sombra local init https://github.com/yunier-rojas/sombra-cli.git --id starter --only base,ci
 ```
 
-`--with` accepts a comma separated list, for example `--with base,ci,docs,qa`.
-`--with` replaces the selection, so name `base` when you want the core files. With no
-`--with`, only `base` is selected.
+`--only` accepts a comma separated list, for example `--only base,ci,docs,qa`.
+`--only` replaces the selection, so name `base` when you want the core files. When
+`--only` is omitted, every part is selected.
 
 `sombra local init` clones the template, validates the parts and prompts for the
 variables. It writes `sombra.yaml` and does not copy files yet.
@@ -156,16 +156,16 @@ sombra local update starter --tag v1.0.0
 `sync` files are updated when they are unmodified. `seed` files are kept. Edited
 `sync` files are reported as conflicts and left untouched.
 
-Add or change parts with `--with`:
+Add or change parts with `--only`:
 
 ```bash
-sombra local update starter --with base,ci,docs
+sombra local update starter --only base,ci,docs
 ```
 
 Dropping a part reports its files as `prunable`. Remove them with:
 
 ```bash
-sombra local update starter --with base,ci --prune
+sombra local update starter --only base,ci --prune
 ```
 
 Pruning only removes unmodified files.

@@ -3,6 +3,7 @@ package usecases_test
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -69,7 +70,41 @@ parts:
 	}
 }
 
-func TestLocalInitDefaultsToBase(t *testing.T) {
+func TestLocalInitWithoutPartsSelectsAll(t *testing.T) {
+	templateDir := t.TempDir()
+	writeFile(t, templateDir, ".sombra/template.yaml", `
+schema: 2
+parts:
+  base: [/README.md]
+  ci: [/.github/]
+  docs: [/docs/]
+`)
+	target := t.TempDir()
+	interactor := usecases.NewLocalInitInteractor(
+		&fakePrepare{repo: &fakeRepo{dir: templateDir}},
+		templates.NewDefinitionService(),
+		sombra.NewDefService(),
+		&fakeVars{},
+	)
+
+	if err := interactor.LocalInit(target, "https://example.com/template.git", "", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	def, err := sombra.NewDefService().Load(entities.File(filepath.Join(target, "sombra.yaml")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(def.Templates) != 1 {
+		t.Fatalf("templates = %#v", def.Templates)
+	}
+	want := []string{"base", "ci", "docs"}
+	if !slices.Equal(def.Templates[0].Parts, want) {
+		t.Fatalf("parts = %#v, want %#v", def.Templates[0].Parts, want)
+	}
+}
+
+func TestLocalInitEmptySelectionDefaultsToBase(t *testing.T) {
 	templateDir := t.TempDir()
 	writeFile(t, templateDir, ".sombra/template.yaml", `
 schema: 2
@@ -85,7 +120,7 @@ parts:
 		&fakeVars{},
 	)
 
-	if err := interactor.LocalInit(target, "https://example.com/template.git", "", nil); err != nil {
+	if err := interactor.LocalInit(target, "https://example.com/template.git", "", []string{}); err != nil {
 		t.Fatal(err)
 	}
 
