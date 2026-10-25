@@ -20,8 +20,12 @@ All commands are driven by the top-level `Makefile`, which includes `mk/*.mk`.
 |------------------------------------------------------|--------------------------------------------------------------------|
 | `make build WHAT=sombra`                             | Build binary into `build/`                                         |
 | `make test`                                          | Run all tests with coverage (`go test --cover -parallel=1 -v ...`) |
-| `make qa`                                            | Format `internal/` and `cmd/` with `go fmt`                        |
+| `make qa`                                            | Format, lint, imports, ast-grep and ADR checks                     |
 | `make imports`                                       | Enforce import-layer rules (see Architecture)                      |
+| `make lint-sg`                                       | Run ast-grep rules from `qa/sg/rules`                              |
+| `make lint-usecases`                                 | Check interactor use case contracts                                |
+| `make lint-third-party`                              | Check third-party library ownership                                |
+| `make lint-adr`                                      | Check ADR names, length and required sections                      |
 | `make build-docs`                                    | Build Hugo site (requires Hugo extended + Go)                      |
 | `make serve-docs`                                    | Serve docs locally at `http://localhost:1313/`                     |
 | `go test ./internal/core/usecases/lib_cvs_test.go`   | Run a single test file                                             |
@@ -32,12 +36,12 @@ All commands are driven by the top-level `Makefile`, which includes `mk/*.mk`.
 Run these and ensure they pass:
 
 ```bash
-make qa        # formatting
+make qa        # formatting, lint, imports, ast-grep and ADRs
 make test      # tests
-make imports   # import rules
 ```
 
-CI (`.github/workflows/ci.yaml`) runs `make test` and `make imports`, plus
+CI (`.github/workflows/ci.yaml`) runs `make test`, `make imports`, `make lint-sg`,
+`make lint-usecases`, `make lint-third-party`, `make lint-adr`, plus
 `make build-docs`.
 
 ## Architecture
@@ -60,14 +64,27 @@ internal/runtime        Wiring/composition root. Constructs interactors with
 
 ### Import rules are enforced
 
-`qa/.import.yaml` defines per-folder allowlists and is validated by
-`make imports`. Do not introduce imports outside the allowed list for a folder.
-Notably:
+`qa/import-core.yaml` and `qa/import-rest.yaml` define per-folder allowlists and
+are validated by `make imports`. Do not introduce imports outside the allowed
+list for a folder. Notably:
 
 - `core/usecases` may **not** import frameworks; if a use case needs I/O,
   define a port (interface) and implement it in a framework.
+- `core/entities` and `core/usecases` may **not** import `os`, `io/fs`,
+  `path/filepath` or `os/exec`. Paths cross ports as `entities.File` or `string`.
+- Adapters translate platform failures into `entities.Failure` values before they
+  cross a port. The core relies on the failure kind, not on an `os` error.
 - `core/entities` stays dependency-free (only `fmt`, `strings`).
 - `internal/runtime` is the only place that wires core + frameworks together.
+
+### Decisions are recorded
+
+- Every decision goes in `adr/<type>/` as `yyyy-mm-dd-short-title.md`, where type is
+  `product`, `process` or `technical`.
+- Each ADR has a title, Problem, Decisions and Consequences, stays under 30
+  lines and 500 words, and does not repeat the date in the title.
+- Every ast-grep rule names the ADR that created it under `metadata.adr`.
+- Run `make lint-adr` and `make lint-sg` after changing an ADR or a rule.
 
 ### Conventions
 
@@ -76,6 +93,8 @@ Notably:
   package, and wire it in `internal/runtime`.
 - Follow existing naming: use cases are `...Interactor`, services in frameworks
   are `...Service`, engines `...Engine`.
+- Ports take roots and slash-relative paths. Adapters resolve them into platform
+  paths and translate platform failures.
 - Tests live next to the code as `*_test.go` in `internal/core/usecases`.
 - Error handling uses `github.com/cockroachdb/errors`.
 - Logging uses `github.com/rs/zerolog` via `internal/frameworks/logger`; do not
@@ -90,6 +109,15 @@ Notably:
 
 - Go files and Makefiles use tabs; YAML/JSON use 2 spaces (`.editorconfig`).
 - Use `make qa` (`go fmt`) before committing; do not hand-format.
+
+## Working on guidance
+
+- Write guidance for future work, not a history of the change. AGENTS.md holds
+  standing rules that apply to every future change; rationale and past context belong
+  in an ADR.
+- When a rule can be enforced, add the enforcement. Prefer the compiler, import
+  allowlists and ast-grep. When those cannot express it, a small script under `qa/`
+  wired into `make qa` and CI is acceptable, as long as it fails closed.
 
 ## Docs
 

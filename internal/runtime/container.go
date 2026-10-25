@@ -3,29 +3,20 @@ package runtime
 import (
 	"github.com/yunier-rojas/sombra-cli/internal/core/usecases"
 	// sombra:skip
-	"github.com/yunier-rojas/sombra-cli/internal/frameworks/analysers"
 	"github.com/yunier-rojas/sombra-cli/internal/frameworks/cvs"
 	"github.com/yunier-rojas/sombra-cli/internal/frameworks/files"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/lock"
 	"github.com/yunier-rojas/sombra-cli/internal/frameworks/sombra"
 	"github.com/yunier-rojas/sombra-cli/internal/frameworks/templates"
 	"github.com/yunier-rojas/sombra-cli/internal/frameworks/vars"
 	"github.com/yunier-rojas/sombra-cli/internal/frameworks/versions"
+	"github.com/yunier-rojas/sombra-cli/internal/frameworks/workspace"
 	// sombra:end
 	"go.uber.org/dig"
 )
 
-// sombra:skip
-
-type updateCasesParams struct {
-	dig.In
-	Copy usecases.LocalUpdateCase `name:"copy"`
-	Diff usecases.LocalUpdateCase `name:"diff"`
-}
-
-// sombra:end
-
 type provider struct {
-	constructor interface{}
+	constructor any
 	options     []dig.ProvideOption
 }
 
@@ -40,23 +31,24 @@ func newContainer() (*dig.Container, error) {
 		{constructor: usecases.NewCliLocalInitInteractor, options: []dig.ProvideOption{dig.As(new(usecases.CliLocalInitCase))}},
 		{constructor: func() usecases.RepositoryFactory { return cvs.For }},
 		{constructor: usecases.NewRepositoryPrepareInteractor, options: []dig.ProvideOption{dig.As(new(usecases.RepositoryPrepareCase))}},
-		{constructor: files.NewDirectoryScannerService, options: []dig.ProvideOption{dig.As(new(usecases.DirectoryManagerPort))}},
-		{constructor: files.NewFileManagerService, options: []dig.ProvideOption{dig.As(new(usecases.FileManagerPort))}},
-		{constructor: sombra.NewProcessor, options: []dig.ProvideOption{dig.As(new(usecases.SombraStringsPort))}},
-		{constructor: sombra.NewDefService, options: []dig.ProvideOption{dig.As(new(usecases.SombraDefManagerPort))}},
-		{constructor: templates.NewDefService, options: []dig.ProvideOption{dig.As(new(usecases.TemplateDefManagerPort))}},
-		{constructor: vars.NewReader, options: []dig.ProvideOption{dig.As(new(usecases.VariableReaderPort))}},
-		{constructor: versions.NewTemplateTagManagerService, options: []dig.ProvideOption{dig.As(new(usecases.VersionManagerPort))}},
-		{constructor: cvs.NewPatchService, options: []dig.ProvideOption{dig.As(new(usecases.PatchPort))}},
-		{constructor: analysers.GetRegistry},
-		{constructor: usecases.NewSombraEngineInteractor, options: []dig.ProvideOption{dig.As(new(usecases.SombraEngineCase))}},
-		{constructor: usecases.NewLocalCopyInteractor, options: []dig.ProvideOption{dig.As(new(usecases.LocalUpdateCase)), dig.Name("copy")}},
-		{constructor: usecases.NewDirectoryLocalDiffInteractor, options: []dig.ProvideOption{dig.As(new(usecases.LocalUpdateCase)), dig.Name("diff")}},
-		{constructor: newCliUpdateInteractor},
+		{constructor: usecases.NewLocalUpdateInteractor, options: []dig.ProvideOption{dig.As(new(usecases.LocalUpdateCase))}},
 		{constructor: usecases.NewDirectoryTemplateInitInteractor, options: []dig.ProvideOption{dig.As(new(usecases.TemplateInitCase))}},
 		{constructor: usecases.NewCliTemplateInitInteractor, options: []dig.ProvideOption{dig.As(new(usecases.CliTemplateInitCase))}},
-		// sombra:end
 
+		{constructor: files.NewService, options: []dig.ProvideOption{dig.As(
+			new(usecases.FileListerPort),
+			new(usecases.FileStorePort),
+			new(usecases.PathMatcherPort),
+			new(usecases.HasherPort),
+		)}},
+		{constructor: lock.NewService, options: []dig.ProvideOption{dig.As(new(usecases.LockStorePort))}},
+		{constructor: sombra.NewDefService, options: []dig.ProvideOption{dig.As(new(usecases.SombraDefManagerPort))}},
+		{constructor: sombra.NewTransformer, options: []dig.ProvideOption{dig.As(new(usecases.TransformerPort))}},
+		{constructor: templates.NewDefinitionService, options: []dig.ProvideOption{dig.As(new(usecases.DefinitionPort))}},
+		{constructor: workspace.NewService, options: []dig.ProvideOption{dig.As(new(usecases.WorkspacePort))}},
+		{constructor: vars.NewReader, options: []dig.ProvideOption{dig.As(new(usecases.VariableReaderPort))}},
+		{constructor: versions.NewTemplateTagManagerService, options: []dig.ProvideOption{dig.As(new(usecases.VersionManagerPort))}},
+		// sombra:end
 	}
 
 	for _, p := range providers {
@@ -67,14 +59,6 @@ func newContainer() (*dig.Container, error) {
 
 	return container, nil
 }
-
-// sombra:skip
-
-func newCliUpdateInteractor(params updateCasesParams) usecases.CliUpdateCase {
-	return usecases.NewCliUpdateInteractor(params.Copy, params.Diff)
-}
-
-// sombra:end
 
 func resolve[T any](container *dig.Container) (T, error) {
 	var value T

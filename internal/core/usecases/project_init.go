@@ -1,102 +1,92 @@
 package usecases
 
-// sombra:skip
-
 import (
 	"fmt"
+	"sort"
 
 	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 )
 
-// sombra:end
-
 type LocalInitCase interface {
-	LocalInit(target, uri, id string) error
+	LocalInit(target, uri, id string, parts []string) error
 }
 
-// sombra:skip
-
 type VariableReaderPort interface {
-	GetValues(vars []string) *entities.Mappings
+	GetValues(vars []entities.VarSpec) (entities.Mappings, error)
 }
 
 type LocalInitInteractor struct {
-	repoPrepare        RepositoryPrepareCase
-	templateDefManager TemplateDefManagerPort
-	sombraDefManager   SombraDefManagerPort
-	varsSource         VariableReaderPort
+	repoPrepare RepositoryPrepareCase
+	definition  DefinitionPort
+	sombraDef   SombraDefManagerPort
+	varsSource  VariableReaderPort
 }
 
-func (l *LocalInitInteractor) LocalInit(target, uri, id string) error {
-	// Download and prepare the version
+func (l *LocalInitInteractor) LocalInit(target, uri, id string, parts []string) error {
 	repo, err := l.repoPrepare.Prepare(uri, "")
 	if err != nil {
 		return err
 	}
 	defer func() { _ = repo.Clean() }()
 
-	// Read the template configuration
-	fn := l.templateDefManager.GetFile(repo.Dir())
-	tpl, err := l.templateDefManager.Load(fn)
+	def, err := l.definition.Load(l.definition.GetFile(repo.Dir()))
 	if err != nil {
 		return err
 	}
 
-	// Read missing variables
-	vars := tpl.Vars
-	mappings := l.varsSource.GetValues(vars)
+	parts = normalizeParts(parts)
+	if _, err := activeEntries(def, parts); err != nil {
+		return err
+	}
 
-	// Read sombra file
-	fn = l.sombraDefManager.GetFile(target)
-	def, err := l.sombraDefManager.Load(fn)
+	sombraFile := l.sombraDef.GetFile(target)
+	targetDef, err := l.sombraDef.Load(sombraFile)
 	if err != nil {
 		return err
 	}
 
-	// Resolve the template id: explicit ids must be unique, generated ones get
-	// a numeric suffix when they collide.
 	if id == "" {
-		id = def.UniqueID(entities.DeriveID(uri))
+		id = targetDef.UniqueID(entities.DeriveID(uri))
 	} else if !entities.ValidID(id) {
-		return fmt.Errorf("invalid template id %q: use letters, numbers, underscores or dashes", id)
-	} else if def.HasID(id) {
-		return fmt.Errorf("template id %q already exists", id)
+		return entities.Invalid(fmt.Sprintf("invalid template id %q: use letters, numbers, underscores or dashes", id), nil)
+	} else if targetDef.HasID(id) {
+		return entities.Invalid(fmt.Sprintf("template id %q already exists", id), nil)
 	}
 
-	// Update sombra file
-	def.Templates = append(def.Templates, &entities.TemplateConfig{
-		ID:   id,
-		URI:  uri,
-		Vars: *mappings,
+	specs := make([]entities.VarSpec, 0, len(def.Vars))
+	for name, spec := range def.Vars {
+		spec.Name = name
+		specs = append(specs, spec)
+	}
+	sort.Slice(specs, func(i, j int) bool { return specs[i].Name < specs[j].Name })
+
+	values, err := l.varsSource.GetValues(specs)
+	if err != nil {
+		return err
+	}
+
+	targetDef.Templates = append(targetDef.Templates, &entities.TemplateConfig{
+		ID:    id,
+		URI:   uri,
+		Parts: append([]string(nil), parts...),
+		Vars:  values,
 	})
 
-	// Store sombra file
-	err = l.sombraDefManager.Save(fn, def)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return l.sombraDef.Save(sombraFile, targetDef)
 }
 
 var _ LocalInitCase = (*LocalInitInteractor)(nil)
 
-// sombra:end
-
 func NewLocalInitInteractor(
-	// sombra:skip
 	repoPrepare RepositoryPrepareCase,
-	templateDefManager TemplateDefManagerPort,
-	sombraDefManager SombraDefManagerPort,
+	definition DefinitionPort,
+	sombraDef SombraDefManagerPort,
 	varsSource VariableReaderPort,
-	// sombra:end
 ) *LocalInitInteractor {
-	// sombra:skip
 	return &LocalInitInteractor{
-		repoPrepare:        repoPrepare,
-		templateDefManager: templateDefManager,
-		sombraDefManager:   sombraDefManager,
-		varsSource:         varsSource,
+		repoPrepare: repoPrepare,
+		definition:  definition,
+		sombraDef:   sombraDef,
+		varsSource:  varsSource,
 	}
-	// sombra:end
 }

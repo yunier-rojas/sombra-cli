@@ -35,4 +35,4 @@ func NewRepositoryPrepareInteractor(factory RepositoryFactory) *RepositoryPrepar
 	return &RepositoryPrepareInteractor{factory: factory}
 }
 
-var _ CliTemplateInitCase = (*CliTemplateInitInteractor)(nil)
+var _ RepositoryPrepareCase = (*RepositoryPrepareInteractor)(nil)

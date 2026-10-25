@@ -1,0 +1,21 @@
+id: error-compare-with-errors-is
+language: go
+severity: error
+message: Compare errors with errors.Is or errors.As, not ==.
+files:
+  - internal/**/*.go
+  - cmd/**/*.go
+ignores:
+  - "**/*_test.go"
+metadata:
+  adr: adr/technical/2026-10-02-error-handling.md
+rule:
+  any:
+    - pattern: $A == $B
+    - pattern: $A != $B
+constraints:
+  A:
+    regex: '^(err|Err[A-Za-z0-9_]*)$'
+  B:
+    not:
+      regex: '^(nil|true|false)$'

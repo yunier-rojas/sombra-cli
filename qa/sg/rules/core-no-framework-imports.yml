@@ -1,0 +1,15 @@
+id: core-no-framework-imports
+language: go
+severity: error
+message: The core must not import framework adapters. Declare a port instead.
+files:
+  - internal/core/**/*.go
+ignores:
+  - "**/*_test.go"
+metadata:
+  adr: adr/technical/2026-10-25-framework-failures-stop-at-the-adapter.md
+rule:
+  kind: import_spec
+  has:
+    field: path
+    regex: '"([^"]*/)?internal/frameworks/'

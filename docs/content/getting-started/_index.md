@@ -22,10 +22,10 @@ Use it when you apply templates or scaffold new projects.
 
 ## Start Here
 
-- [Installation](installation.md) — Install `sombra` with Go, a prebuilt binary, or from source.
+- [Installation](installation.md): Install `sombra` with Go, a prebuilt binary, or from source.
 - [Use sombra-cli as a Template](use-sombra-as-template.md): scaffold a new Go CLI from this repository.
-- [`sombra.yaml` file](../cli/sombra-file.md) — Configure how your project applies one or more templates.
-- [CLI Commands](../cli/commands.md) — Reference for all `sombra` commands and flags.
+- [`sombra.yaml` file](../cli/sombra-file.md): Configure how your project applies one or more templates.
+- [CLI Commands](../cli/commands.md): Reference for all `sombra` commands and flags.
 
 ---
 

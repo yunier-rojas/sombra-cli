@@ -9,39 +9,40 @@ aliases:
 
 ## Overview
 
-Templates turn real code into reusable, versioned project generators. You do not modify the original repository.
+Templates turn real code into reusable, versioned project generators. The source
+repository stays a normal project.
 
-This section explains how to author, structure, and publish a template that other people can use with `sombra`.
+This section explains how to author, structure and publish a template.
 
 ---
 
 ## What Is a Template?
 
-A **template** is a Git repository that contains:
+A template is a git repository with a definition file at `.sombra/template.yaml`. The
+definition selects files, assigns ownership modes, rewrites the project identity and
+declares a required `base` part and optional parts.
 
-- Real project files (application, service, etc.)
-- A `.sombra/default.yaml` file defining transformation rules
-
-With a `sombra.yaml`, `sombra` generates new projects by replacing values in filenames, content, and directory paths using Go templates.
+A target project stores its template choices in `sombra.yaml` and records what Sombra
+wrote in `.sombra/lock.yaml`.
 
 ---
 
 ## Who Is This For?
 
-This guide is for developers, consultants, and teams who want to:
+This guide is for developers, consultants and teams who want to:
 
-- Share boilerplate across projects or clients
-- Keep a consistent project structure and tooling setup across services
-- Reuse existing code without duplication
+- share boilerplate across projects or clients;
+- keep a consistent structure and tooling setup;
+- reuse existing code without duplication;
+- update shared scaffolding without overwriting local edits.
 
 ---
 
 ## Get Started
 
-Ready to build a template?
+- [Start a Template](start-a-template.md): convert a real project into a template.
+- [Concepts](concepts.md): selection, modes, rewrites, overlays, directives, parts and
+  the lock file.
+- [Best Practices](best-practices.md): keep a template maintainable.
 
-- [Start a Template](start-a-template.md) — Convert a real project into a template
-- [Concepts](concepts.md) — Templates, patterns, and mappings
-- [Best Practices](best-practices.md) — Keep a template maintainable
-
-To use a template instead, see the [Getting Started](../getting-started/index.md) section.
+To use a template instead, see [Use sombra-cli as a Template](../getting-started/use-sombra-as-template.md).

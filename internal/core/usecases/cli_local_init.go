@@ -1,15 +1,15 @@
 package usecases
 
 type CliLocalInitCase interface {
-	DoLocalInit(target, uri, id string) error
+	DoLocalInit(target, uri, id string, parts []string) error
 }
 
 type CliLocalInitInteractor struct {
 	localInitCase LocalInitCase
 }
 
-func (l *CliLocalInitInteractor) DoLocalInit(target, uri, id string) error {
-	return l.localInitCase.LocalInit(target, uri, id)
+func (l *CliLocalInitInteractor) DoLocalInit(target, uri, id string, parts []string) error {
+	return l.localInitCase.LocalInit(target, uri, id, parts)
 }
 
 func NewCliLocalInitInteractor(localInitCase LocalInitCase) *CliLocalInitInteractor {

@@ -1,0 +1,12 @@
+id: docs-no-emoji
+language: markdown
+severity: error
+message: Limit emojis in docs.
+files:
+  - docs/content/**/*.md
+  - www/content/**/*.md
+metadata:
+  adr: adr/technical/2026-10-02-docs-typography.md
+rule:
+  kind: document
+  regex: '[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}]'

@@ -5,7 +5,7 @@ import (
 )
 
 type LocalUpdateRuntime struct {
-	UseCase usecases.CliUpdateCase
+	UseCase usecases.LocalUpdateCase
 }
 
 func NewLocalUpdateRuntime() (*LocalUpdateRuntime, error) {
@@ -14,7 +14,7 @@ func NewLocalUpdateRuntime() (*LocalUpdateRuntime, error) {
 		return nil, err
 	}
 
-	useCase, err := resolve[usecases.CliUpdateCase](container)
+	useCase, err := resolve[usecases.LocalUpdateCase](container)
 	if err != nil {
 		return nil, err
 	}

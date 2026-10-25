@@ -9,7 +9,7 @@ aliases:
 
 The `sombra-cli` repository is also a template. Point `sombra` at it to scaffold a
 new Go CLI with the same structure: domain entities, use cases, a composition root,
-a logger, and build, CI, QA, and docs scaffolding.
+a logger and the build scaffolding.
 
 This page covers using that template. To build your own, see
 [Start a Template](../templates/start-a-template.md).
@@ -18,25 +18,28 @@ This page covers using that template. To build your own, see
 
 ## What the Template Provides
 
-Core files:
+Core files (`base` part):
 
 - `cmd/<project>/main.go`: CLI entry point built with go-arg
-- `internal/core/entities`: domain types
-- `internal/core/usecases`: use case interactors and ports
+- `internal/core/entities`: shared domain types
+- `internal/core/usecases`: the version use case
 - `internal/runtime`: dependency injection and composition
 - `internal/frameworks/logger`: zerolog adapter
-- `Makefile` and `mk/`: build, test, QA, and docs targets
-- `.editorconfig`, `.gitignore`, `.dockerignore`, `LICENSE`, `README.md`, `AGENTS.md`
+- `Makefile` and `mk/`: build and test targets
+- `.editorconfig`, `.gitignore`, `LICENSE`, `README.md`, `AGENTS.md`,
+  `opencode.jsonc`
 
-Optional components, enabled by variables:
+Optional parts:
 
-- `.github/` workflows (`include_ci`)
-- `qa/` import rules (`include_qa`)
-- `docs/` Hugo site (`include_docs`)
+- `ci`: `.github/` workflows
+- `docs`: the Hugo documentation site
+- `qa`: QA import rules, ast-grep rules, ADRs and ADR checks
 
 The template copies a curated subset. Business logic and the remaining framework
-adapters are left out on purpose, so you build on a lean skeleton instead of
-inheriting a finished product.
+adapters are left out on purpose, so you build on a lean skeleton.
+
+The copied Go files are `seed`. Sombra writes them once and never overwrites your
+edits.
 
 ---
 
@@ -50,34 +53,32 @@ inheriting a finished product.
 
 ## Step 1: Register the Template
 
-Create the target project directory and register the template:
+Create the target directory and register the template with the parts you want:
 
 ```bash
 mkdir hello-cli
 cd hello-cli
-sombra local init https://github.com/yunier-rojas/sombra-cli.git --id starter
+sombra local init https://github.com/yunier-rojas/sombra-cli.git --id starter --with base,ci
 ```
 
-`--id` gives the template a short name you reuse on updates. Without it, `sombra`
-derives an id from the repository name.
+`--with` accepts a comma separated list, for example `--with base,ci,docs,qa`.
+`--with` replaces the selection, so name `base` when you want the core files. With no
+`--with`, only `base` is selected.
 
-`sombra local init` clones the template, reads the variables it declares, and
-prompts for a value for each. It writes them to `sombra.yaml`. It does not copy
-files yet.
+`sombra local init` clones the template, validates the parts and prompts for the
+variables. It writes `sombra.yaml` and does not copy files yet.
 
 ---
 
 ## Step 2: Answer the Variables
 
-| Variable       | Purpose                                              |
-|----------------|------------------------------------------------------|
-| `github_user`  | Owner used in the module path and metadata           |
-| `project`      | Project name, used for the command and identifiers   |
-| `repository`   | Repository name, used in the module path             |
-| `author`       | Author name                                          |
-| `include_ci`   | `true` copies the `.github/` workflows               |
-| `include_docs` | `true` copies the `docs/` site                       |
-| `include_qa`   | `true` copies the `qa/` import rules                 |
+| Variable      | Purpose                                            |
+|---------------|----------------------------------------------------|
+| `project`     | Project and command name                           |
+| `module`      | Go module path, for example `example.com/hello-cli` |
+| `repository`  | Repository slug, for example `acme/hello-cli`       |
+| `github_user` | GitHub user or organization                         |
+| `author`      | Author name                                         |
 
 Example `sombra.yaml`:
 
@@ -85,14 +86,13 @@ Example `sombra.yaml`:
 templates:
   - id: starter
     uri: https://github.com/yunier-rojas/sombra-cli.git
+    parts: [base, ci]
     vars:
-      github_user: acme
       project: hello-cli
-      repository: hello-cli
+      module: example.com/hello-cli
+      repository: acme/hello-cli
+      github_user: acme
       author: Acme Inc.
-      include_ci: "true"
-      include_docs: "false"
-      include_qa: "false"
 ```
 
 The values are reused on every update, so you answer once.
@@ -105,24 +105,27 @@ The values are reused on every update, so you answer once.
 sombra local update starter
 ```
 
-This copies the files into the current directory and records the applied tag in
-`current`. The default `--method copy` seeds the Go skeleton. Skeleton files are
-marked `copy_only`, so later `--method diff` updates never overwrite code you edit.
+This copies the files and writes `.sombra/lock.yaml`. Commit the lock file.
+
+The command reports `created`, `updated`, `unchanged`, `kept`, `adopted`, `removed`,
+`prunable` and `conflict`. It exits with a non-zero status when conflicts remain.
+
+Use `--dry-run` first when you are unsure:
+
+```bash
+sombra local update starter --dry-run
+```
 
 ---
 
 ## Step 4: Build and Test the Project
 
-The generated project compiles on its own. From the project directory, build
-everything and run the version command:
+The generated project compiles on its own:
 
 ```bash
 go build ./...
 go run ./cmd/hello-cli version
 ```
-
-`go run` prints the project name and the version. The version is `dev` until a
-build injects one.
 
 Build a binary with the Makefile:
 
@@ -131,12 +134,7 @@ VERSION=v0.1.0 make build
 ./build/hello-cli-linux-amd64 version
 ```
 
-`make build` writes the binary to `build/`. The name follows
-`<project>-<goos>-<goarch>`, with a `.exe` suffix on Windows. Replace the OS and
-architecture in the example with your own. On a Git repository, `make build`
-derives the version from `git describe`. In a directory that is not a Git
-repository, pass `VERSION` explicitly as shown, otherwise the binary reports an
-empty version.
+The binary name follows `<project>-<goos>-<goarch>`, with a `.exe` suffix on Windows.
 
 Run the tests:
 
@@ -144,33 +142,54 @@ Run the tests:
 make test
 ```
 
-The skeleton ships without tests, so coverage is 0%. Add tests next to the code
-as `*_test.go` files.
+The skeleton ships without tests, so coverage is 0%. Add tests next to the code as
+`*_test.go` files.
 
 ---
 
 ## Updating the Project
 
-When the template changes, update to a new tag:
-
 ```bash
-sombra local update --tag v1.0.0 --method diff starter
+sombra local update starter --tag v1.0.0
 ```
 
-`--method diff` refreshes everything except the `copy_only` skeleton, so your edits
-are preserved. See [CLI Commands](../cli/commands.md#sombra-local-update).
+`sync` files are updated when they are unmodified. `seed` files are kept. Edited
+`sync` files are reported as conflicts and left untouched.
+
+Add or change parts with `--with`:
+
+```bash
+sombra local update starter --with base,ci,docs
+```
+
+Dropping a part reports its files as `prunable`. Remove them with:
+
+```bash
+sombra local update starter --with base,ci --prune
+```
+
+Pruning only removes unmodified files.
+
+If you already have a project with the same files, use `--adopt` to record the files
+whose content already matches:
+
+```bash
+sombra local update starter --adopt
+```
 
 ---
 
 ## Limitations
 
-- The generated project is a skeleton, not a finished product. It ships a working
-  `version` command as the sample vertical slice (command, runtime and use case);
-  add your own commands and business logic.
-- Renames are text based. Review the output when copied files contain names that
-  also appear in your own code.
-- Optional components are copied at generation time from the `include_*` values.
-  Setting a value to `false` later does not remove files that were already copied.
+- The generated project is a skeleton. It ships a working `version` command as the
+  sample vertical slice. Add your own commands and business logic.
+- Renames are text based. Review the output when copied files contain names that also
+  appear in your own code.
+- Parts are applied only when selected. `base` is selected by default, but naming any
+  other part omits it unless you also name `base`. Removing a part requires `--prune`
+  to delete its files.
+- The template definition shape is not compatible with `.sombra/default.yaml` or a
+  top-level `include` list.
 
 ---
 

@@ -1,392 +1,289 @@
 package usecases
 
 import (
-	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
+	"fmt"
 	"sort"
+	"strings"
+
+	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
 )
 
-type LocalFileAnalyserPort interface {
-	GetAbstractCandidates() ([]*entities.AbstractMappingCandidate, error)
-	GetFileAnalysis() ([]*entities.FileAnalysis, error)
-	GetFileName() entities.File
-}
-
-type FileAnalyserRegistryPort interface {
-	GetAnalyser(baseDir string, file entities.File) (LocalFileAnalyserPort, error)
-}
-
 type TemplateInitCase interface {
-	TemplateInit(baseDir string, only []entities.Wildcard, exclude []entities.Wildcard) error
+	TemplateInit(dir string, opts entities.TemplateInitOptions) (*entities.TemplateInitResult, error)
 }
 
 type DirectoryTemplateInitInteractor struct {
-	scanner     DirectoryManagerPort
-	registry    FileAnalyserRegistryPort
-	templateDef TemplateDefManagerPort
-	engine      SombraEngineCase
-}
-
-// TemplateInit initializes the repository with the provided template
-func (l *DirectoryTemplateInitInteractor) TemplateInit(templateDir string, only []entities.Wildcard, exclude []entities.Wildcard) error {
-	tree := l.scanner.ScanTree(templateDir, only, exclude)
-
-	var analysers = make([]LocalFileAnalyserPort, 0)
-	var analyser LocalFileAnalyserPort
-	var err error
-	for result := range tree {
-		if result.Err != nil {
-			return result.Err
-		}
-		analyser, err = l.registry.GetAnalyser(templateDir, result.File)
-		if err != nil {
-			return err
-		}
-		analysers = append(analysers, analyser)
-	}
-
-	abstractMappings, err := l.extractAbstractMappings(analysers, exclude)
-	if err != nil {
-		return err
-	}
-
-	vars, fileMappings, err := l.extractFileMappings(analysers, abstractMappings, only, exclude)
-	if err != nil {
-		return err
-	}
-	template, err := l.buildTemplate(vars, fileMappings)
-	if err != nil {
-		return err
-	}
-
-	templateDefFile := l.templateDef.GetFile(templateDir)
-	err = l.templateDef.Save(templateDefFile, template)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (l *DirectoryTemplateInitInteractor) buildTemplate(strings []string, files []*entities.Pattern) (*entities.TemplateDef, error) {
-	// Create a new slice to store the combined patterns
-	combinedPatterns := make([]*entities.Pattern, 0)
-
-	combinedPatterns = append(combinedPatterns, files...)
-
-	// Initialize the template definition
-	template := &entities.TemplateDef{
-		Vars:     l.deduplicateVars(strings), // The variables derived from the process
-		Patterns: combinedPatterns,           // Consolidate global and file-specific patterns
-	}
-	return template, nil
-}
-
-// deduplicateVars removes duplicate variables from a list
-func (l *DirectoryTemplateInitInteractor) deduplicateVars(input []string) []string {
-	keys := make(map[string]bool)
-	list := []string{}
-	for _, entry := range input {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-	return list
-}
-
-// extractAbstractMappings extracts abstract mapping patterns from files
-func (l *DirectoryTemplateInitInteractor) extractAbstractMappings(files []LocalFileAnalyserPort, exclude []entities.Wildcard) ([]*entities.Pattern, error) {
-	candidates := make([]*entities.AbstractMappingCandidate, 0)
-
-	for _, file := range files {
-		proposed, err := file.GetAbstractCandidates()
-		if err != nil {
-			return nil, err
-		}
-		candidates = append(candidates, proposed...)
-	}
-	return l.unifyAbstractMappings(candidates, exclude), nil
-}
-
-// unifyAbstractMappings consolidates and unifies abstract mapping candidates
-func (l *DirectoryTemplateInitInteractor) unifyAbstractMappings(candidates []*entities.AbstractMappingCandidate, exclude []entities.Wildcard) []*entities.Pattern {
-	varMap := make(map[string]*entities.AbstractMappingCandidate)
-
-	for _, candidate := range candidates {
-		name := candidate.Name
-		winner, found := varMap[name]
-
-		if !found || (candidate.Priority > winner.Priority) {
-			varMap[name] = candidate
-		}
-	}
-
-	mappings := make(map[entities.MappingType]entities.Mappings)
-	for _, candidate := range varMap {
-		if _, exists := mappings[candidate.For]; !exists {
-			mappings[candidate.For] = make(entities.Mappings)
-		}
-		mappings[candidate.For][candidate.Key] = candidate.Value
-	}
-
-	return []*entities.Pattern{
-		{
-			Pattern:  "/**/*",
-			Abstract: true,
-			Default:  mappings[entities.MappingDefault],
-			Path:     mappings[entities.MappingPath],
-			Name:     mappings[entities.MappingName],
-			Content:  mappings[entities.MappingContent],
-			Except:   exclude,
-		},
-	}
-}
-
-// extractFileMappings processes individual file mappings and removes duplicates
-func (l *DirectoryTemplateInitInteractor) extractFileMappings(files []LocalFileAnalyserPort, wildcardPatterns []*entities.Pattern, only, exclude []entities.Wildcard) ([]string, []*entities.Pattern, error) {
-	res := make([]*entities.Pattern, 0)
-	vars := []string{}
-	ignore := []entities.Wildcard{}
-	var err error
-	var analysis, allAnalysis []*entities.FileAnalysis
-
-	for _, wildcard := range only {
-		wildcardPatterns = append(wildcardPatterns, &entities.Pattern{
-			Pattern: wildcard,
-			Default: make(entities.Mappings),
-			Path:    make(entities.Mappings),
-			Name:    make(entities.Mappings),
-			Content: make(entities.Mappings),
-			Except:  exclude,
-		})
-	}
-
-	for _, file := range files {
-		analysis, err = file.GetFileAnalysis()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		allAnalysis = append(allAnalysis, analysis...)
-	}
-
-	for _, analyser := range allAnalysis {
-		if len(analyser.Exclude) > 0 {
-			ignore = append(ignore, analyser.Exclude...)
-		}
-		vars = append(vars, analyser.Vars...)
-	}
-
-	ignore = append(ignore, exclude...)
-
-	for _, analyser := range allAnalysis {
-		if analyser.Pattern == nil {
-			continue
-		}
-
-		if analyser.IsWildcard {
-			wildcardPatterns = append(wildcardPatterns, analyser.Pattern)
-		}
-	}
-
-	err = l.updateWildcardsWithIgnores(wildcardPatterns, ignore)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	res = append(res, wildcardPatterns...)
-
-	var matching []*entities.Pattern
-	var include bool
-
-	for _, analyser := range allAnalysis {
-		if analyser.Pattern == nil {
-			continue
-		}
-
-		pattern := analyser.Pattern
-
-		name := pattern.Pattern
-		include, matching, err = l.engine.Match(entities.File(name), wildcardPatterns)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if !include && !analyser.IsMandatory {
-			continue
-		}
-
-		l.removeDuplicateMappings(pattern, matching)
-
-		if !l.isRelevantPattern(pattern) && include {
-			// Skip if the cleaned mapping has no unique values beyond the wildcard
-			continue
-		}
-		res = append(res, pattern)
-	}
-
-	res, err = l.combinePatterns(res)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return vars, res, nil
-}
-
-// removeDuplicateMappings removes redundant mappings between file and global patterns
-func (l *DirectoryTemplateInitInteractor) removeDuplicateMappings(pattern *entities.Pattern, globalPatterns []*entities.Pattern) {
-	for _, globalPattern := range globalPatterns {
-		l.removeMappingForCategory(pattern, globalPattern.Default)
-		l.removeMappingForCategory(pattern, globalPattern.Path)
-		l.removeMappingForCategory(pattern, globalPattern.Name)
-		l.removeMappingForCategory(pattern, globalPattern.Content)
-	}
-}
-
-// removeMappingForCategory removes redundant mappings from the specified category
-func (l *DirectoryTemplateInitInteractor) removeMappingForCategory(targetPattern *entities.Pattern, referenceMappings entities.Mappings) {
-	l.removeMappings(targetPattern.Default, referenceMappings)
-	l.removeMappings(targetPattern.Path, referenceMappings)
-	l.removeMappings(targetPattern.Name, referenceMappings)
-	l.removeMappings(targetPattern.Content, referenceMappings)
-}
-
-// removeMappings removes matching mappings from a target mapping collection
-func (l *DirectoryTemplateInitInteractor) removeMappings(target, reference entities.Mappings) {
-	for selector, refValue := range reference {
-		if targetValue, exists := target[selector]; exists && targetValue == refValue {
-			delete(target, selector)
-		}
-	}
-}
-
-func (l *DirectoryTemplateInitInteractor) combinePatterns(patterns []*entities.Pattern) ([]*entities.Pattern, error) {
-	unified := make(map[entities.Wildcard]map[bool]*entities.Pattern)
-
-	for _, pattern := range patterns {
-		patternMap, ok := unified[pattern.Pattern]
-		if !ok {
-			unified[pattern.Pattern] = make(map[bool]*entities.Pattern)
-			unified[pattern.Pattern][pattern.Abstract] = pattern
-			continue
-		}
-		patternAbstract, ok := patternMap[pattern.Abstract]
-		if !ok {
-			patternMap[pattern.Abstract] = pattern
-			continue
-		}
-
-		l.combineMappings(patternAbstract, pattern)
-	}
-
-	res := make([]*entities.Pattern, 0)
-	for _, patternMap := range unified {
-		for _, pattern := range patternMap {
-			res = append(res, pattern)
-		}
-	}
-
-	sort.Slice(res, func(i, j int) bool {
-		if res[i].Abstract && !res[j].Abstract {
-			return true
-		}
-		if !res[i].Abstract && res[j].Abstract {
-			return false
-		}
-		return res[i].Pattern < res[j].Pattern
-	})
-
-	return res, nil
-}
-
-func (l *DirectoryTemplateInitInteractor) updateWildcardsWithIgnores(globalPatterns []*entities.Pattern, ignore []entities.Wildcard) error {
-	var err error
-	var matching []*entities.Pattern
-	for _, fn := range ignore {
-		_, matching, err = l.engine.Match(entities.File(fn), globalPatterns)
-
-		if err != nil {
-			return err
-		}
-
-		if len(matching) == 0 {
-			continue
-		}
-
-		for _, global := range matching {
-			if global.Abstract {
-				continue
-			}
-			global.Except = append(global.Except, fn)
-		}
-	}
-	return err
-}
-
-func (l *DirectoryTemplateInitInteractor) isRelevantPattern(pattern *entities.Pattern) bool {
-	if len(pattern.Default) != 0 {
-		return true
-	}
-	if len(pattern.Path) != 0 {
-		return true
-	}
-	if len(pattern.Name) != 0 {
-		return true
-	}
-	if len(pattern.Content) != 0 {
-		return true
-	}
-	if len(pattern.Except) != 0 {
-		return true
-	}
-	return pattern.Verbatim || pattern.CopyOnly || pattern.Abstract || pattern.Replace != ""
-}
-
-func (l *DirectoryTemplateInitInteractor) combineMappings(target, source *entities.Pattern) {
-	if target.Default == nil {
-		target.Default = make(entities.Mappings)
-	}
-	if target.Path == nil {
-		target.Path = make(entities.Mappings)
-	}
-	if target.Name == nil {
-		target.Name = make(entities.Mappings)
-	}
-	if target.Content == nil {
-		target.Content = make(entities.Mappings)
-	}
-	for k, v := range source.Default {
-		target.Default[k] = v
-	}
-	for k, v := range source.Path {
-		target.Path[k] = v
-	}
-	for k, v := range source.Name {
-		target.Name[k] = v
-	}
-	for k, v := range source.Content {
-		target.Content[k] = v
-	}
-	target.Except = append(target.Except, source.Except...)
-	if target.Replace == "" {
-		target.Replace = source.Replace
-	}
-	target.Verbatim = target.Verbatim || source.Verbatim
-	target.CopyOnly = target.CopyOnly || source.CopyOnly
-	target.Abstract = target.Abstract || source.Abstract
+	workspace  WorkspacePort
+	definition DefinitionPort
+	matcher    PathMatcherPort
 }
 
 func NewDirectoryTemplateInitInteractor(
-	scanner DirectoryManagerPort,
-	registry FileAnalyserRegistryPort,
-	templateDef TemplateDefManagerPort,
-	engine SombraEngineCase,
+	workspace WorkspacePort,
+	definition DefinitionPort,
+	matcher PathMatcherPort,
 ) *DirectoryTemplateInitInteractor {
 	return &DirectoryTemplateInitInteractor{
-		scanner:     scanner,
-		registry:    registry,
-		templateDef: templateDef,
-		engine:      engine,
+		workspace:  workspace,
+		definition: definition,
+		matcher:    matcher,
 	}
+}
+
+func (t *DirectoryTemplateInitInteractor) TemplateInit(dir string, opts entities.TemplateInitOptions) (*entities.TemplateInitResult, error) {
+	all, err := t.workspace.ListFiles(dir, opts.IncludeUntracked)
+	if err != nil {
+		return nil, err
+	}
+	if len(all) == 0 {
+		return nil, entities.NotFound(fmt.Sprintf("%s: no files found", dir), nil)
+	}
+
+	files, err := t.applyExcludes(all, opts.Exclude)
+	if err != nil {
+		return nil, err
+	}
+	if len(files) == 0 {
+		return nil, entities.NotFound(fmt.Sprintf("%s: no files remain after exclude patterns", dir), nil)
+	}
+
+	var selected []entities.File
+	if len(opts.Only) > 0 {
+		selected, err = t.applyOnly(files, opts.Only)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		selected = files
+	}
+
+	entries := minimalEntries(files, selected)
+	identity := t.workspace.Identity(dir)
+	def := buildDefinition(entries, identity, opts.Exclude)
+
+	file := t.definition.GetFile(dir)
+	exists, err := t.definition.Exists(file)
+	if err != nil {
+		return nil, err
+	}
+	if exists && !opts.Force && !opts.DryRun {
+		return nil, entities.Invalid(fmt.Sprintf("%s already exists; pass --force to overwrite", file), nil)
+	}
+
+	result := &entities.TemplateInitResult{
+		Definition: def,
+		Path:       file,
+		DryRun:     opts.DryRun,
+		Warnings:   identityWarnings(identity),
+	}
+
+	data, err := t.definition.Marshal(def)
+	if err != nil {
+		return nil, err
+	}
+	result.YAML = data
+
+	if !opts.DryRun {
+		if err := t.definition.Save(file, def); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (t *DirectoryTemplateInitInteractor) applyExcludes(files []entities.File, patterns []string) ([]entities.File, error) {
+	if len(patterns) == 0 {
+		return files, nil
+	}
+
+	result := make([]entities.File, 0, len(files))
+	for _, file := range files {
+		excluded := false
+		for _, pattern := range patterns {
+			match, err := t.matcher.Match(string(file), pattern)
+			if err != nil {
+				return nil, err
+			}
+			if match {
+				excluded = true
+				break
+			}
+		}
+		if !excluded {
+			result = append(result, file)
+		}
+	}
+	return result, nil
+}
+
+func (t *DirectoryTemplateInitInteractor) applyOnly(files []entities.File, patterns []string) ([]entities.File, error) {
+	matchedPattern := make([]bool, len(patterns))
+	var result []entities.File
+
+	for _, file := range files {
+		for index, pattern := range patterns {
+			match, err := t.matcher.Match(string(file), pattern)
+			if err != nil {
+				return nil, err
+			}
+			if match {
+				matchedPattern[index] = true
+				result = append(result, file)
+				break
+			}
+		}
+	}
+
+	for index, matched := range matchedPattern {
+		if !matched {
+			return nil, entities.NotFound(fmt.Sprintf("--only %q matched no files", patterns[index]), nil)
+		}
+	}
+	if len(result) == 0 {
+		return nil, entities.NotFound("--only matched no files", nil)
+	}
+	return result, nil
+}
+
+// minimalEntries reduces a selected file set to exact files and directory
+// prefixes. A top-level directory is used only when every file below it is
+// selected.
+func minimalEntries(all, selected []entities.File) []entities.Entry {
+	allByTop := make(map[string]int)
+	for _, file := range all {
+		allByTop[topLevel(file)]++
+	}
+
+	selectedByTop := make(map[string][]entities.File)
+	for _, file := range selected {
+		selectedByTop[topLevel(file)] = append(selectedByTop[topLevel(file)], file)
+	}
+
+	seen := make(map[string]bool)
+	var entries []entities.Entry
+
+	for top, files := range selectedByTop {
+		if top == "" {
+			for _, file := range files {
+				key := string(file)
+				if !seen[key] {
+					seen[key] = true
+					entries = append(entries, entities.Entry{Path: key})
+				}
+			}
+			continue
+		}
+		if len(files) == allByTop[top] {
+			key := "/" + top + "/"
+			if !seen[key] {
+				seen[key] = true
+				entries = append(entries, entities.Entry{Path: key})
+			}
+			continue
+		}
+		for _, file := range files {
+			key := string(file)
+			if !seen[key] {
+				seen[key] = true
+				entries = append(entries, entities.Entry{Path: key})
+			}
+		}
+	}
+
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Path < entries[j].Path })
+	return entries
+}
+
+func topLevel(file entities.File) string {
+	value := strings.TrimPrefix(string(file), "/")
+	if index := strings.Index(value, "/"); index >= 0 {
+		return value[:index]
+	}
+	return ""
+}
+
+func buildDefinition(entries []entities.Entry, identity entities.Identity, exclude []string) *entities.TemplateDef {
+	def := &entities.TemplateDef{
+		Schema: 2,
+		Parts: map[string]entities.Part{
+			entities.BasePart: {Include: entries},
+		},
+		Exclude: append([]string(nil), exclude...),
+		Vars: map[string]entities.VarSpec{
+			"project":    {Name: "project", Description: "Project and command name", Default: identity.Project},
+			"module":     {Name: "module", Description: "Go module path", Default: identity.Module},
+			"repository": {Name: "repository", Description: "Repository slug, usually owner/repo", Default: identity.Repository},
+			"author":     {Name: "author", Description: "Author name", Default: identity.Author},
+		},
+	}
+
+	type candidate struct {
+		find     string
+		variable string
+		as       string
+		ignore   bool
+		scopes   []entities.Scope
+	}
+	var candidates []candidate
+
+	if identity.Module != "" {
+		candidates = append(candidates, candidate{
+			find:     identity.Module,
+			variable: "module",
+			scopes:   []entities.Scope{entities.ScopePath, entities.ScopeName, entities.ScopeContent},
+		})
+	}
+	if identity.Repository != "" {
+		candidates = append(candidates, candidate{
+			find:     identity.Repository,
+			variable: "repository",
+			scopes:   []entities.Scope{entities.ScopePath, entities.ScopeName, entities.ScopeContent},
+		})
+	}
+	if identity.Project != "" {
+		candidates = append(candidates, candidate{
+			find:     identity.Project,
+			variable: "project",
+			as:       "word",
+			ignore:   true,
+			scopes:   []entities.Scope{entities.ScopePath, entities.ScopeName, entities.ScopeContent},
+		})
+	}
+	if identity.Author != "" {
+		candidates = append(candidates, candidate{
+			find:     identity.Author,
+			variable: "author",
+			scopes:   []entities.Scope{entities.ScopeContent},
+		})
+	}
+
+	sort.SliceStable(candidates, func(i, j int) bool { return len(candidates[i].find) > len(candidates[j].find) })
+
+	for _, item := range candidates {
+		replace := "{{ ." + item.variable + " }}"
+		def.Rewrites = append(def.Rewrites, entities.Rewrite{
+			Find:       item.find,
+			As:         item.as,
+			IgnoreCase: item.ignore,
+			Replace:    &replace,
+			In:         item.scopes,
+		})
+	}
+	return def
+}
+
+func identityWarnings(identity entities.Identity) []string {
+	var warnings []string
+	if identity.Module == "" {
+		warnings = append(warnings, "no go.mod module detected; module rewrite not generated")
+	}
+	if identity.Repository == "" {
+		warnings = append(warnings, "no git origin remote detected; repository rewrite not generated")
+	}
+	if identity.Author == "" {
+		warnings = append(warnings, "no git user.name detected; author rewrite not generated")
+	}
+	return warnings
 }
 
 var _ TemplateInitCase = (*DirectoryTemplateInitInteractor)(nil)

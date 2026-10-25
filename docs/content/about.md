@@ -28,7 +28,7 @@ The gap is most visible for teams that want scaffolding to be:
 `sombra-cli` removes the separate template. A template is an existing repository plus one file:
 
 - **The project itself**: real code that builds, runs, and is maintained as usual.
-- **`.sombra/default.yaml`**: the transformation rules. Rename paths, filenames, and content; drop template-only blocks; copy the rest.
+- **`.sombra/template.yaml`**: the template definition. It selects files, sets ownership modes, and renames paths, names, and content. A required `base` part holds the default files. Optional parts group scaffolding that consumers enable.
 
 Generating a project clones the template at a tagged version, applies the rules, and writes the result. The template repository is never modified.
 
@@ -50,7 +50,7 @@ The CLI covers both sides of the workflow:
 
 - **The template is the project**: there is no separate template format to keep in sync.
 - **Transform, do not generate**: `sombra` renames, removes, and copies files that exist. It does not create files that are absent from the repository.
-- **Explicit over implicit**: rules live in `.sombra/default.yaml`, state lives in `sombra.yaml`.
+- **Explicit over implicit**: rules live in `.sombra/template.yaml`, state lives in `sombra.yaml` and `.sombra/lock.yaml`.
 - **Versioned by Git**: templates are consumed by tag, and each project records the version it was generated from.
 - **Readable and auditable**: plain Go, YAML, and Go templates.
 

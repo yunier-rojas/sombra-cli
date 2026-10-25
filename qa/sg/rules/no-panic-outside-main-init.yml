@@ -1,0 +1,20 @@
+id: no-panic-outside-main-init
+language: go
+severity: error
+message: Do not call panic outside main or package init.
+files:
+  - internal/**/*.go
+  - cmd/**/*.go
+ignores:
+  - "**/*_test.go"
+metadata:
+  adr: adr/technical/2026-10-02-error-handling.md
+rule:
+  pattern: panic($$$ARGS)
+  not:
+    inside:
+      stopBy: end
+      kind: function_declaration
+      has:
+        field: name
+        regex: '^(main|init)$'

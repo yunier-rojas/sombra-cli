@@ -7,27 +7,28 @@ aliases:
 
 ## What is the `sombra.yaml` file?
 
-The `sombra.yaml` file defines how templates are applied to a project. It lives in the root of a **target repository** — the repo you are creating or updating using a template.
+`sombra.yaml` declares which templates are applied to a target project. It lives in the
+root of the project.
 
-This file tells `sombra` which template(s) to use, which variables to pass, and which version (tag) is currently applied.
+The file stores the template URI, the selected parts and the variable values. The
+applied version and the file hashes live in `.sombra/lock.yaml`, not here.
+
+`sombra local init` creates or updates this file. `sombra local update` reads it.
 
 ---
 
 ## File Location
 
-Place `sombra.yaml` at the root of your generated project:
-
-```
-
+```text
 my-app/
 ├── sombra.yaml
+├── .sombra/
+│   └── lock.yaml
 ├── go.mod
-├── README.md
 └── ...
-
 ```
 
-You normally do not write it by hand: `sombra local init` creates it (or appends to it) and prompts for the variables the template declares.
+Commit both files.
 
 ---
 
@@ -35,72 +36,129 @@ You normally do not write it by hand: `sombra local init` creates it (or appends
 
 ### `templates`
 
-List of one or more templates applied to the project. Each entry names a template repository and the variables bound to it.
+List of templates applied to the project.
 
 ```yaml
 templates:
   - id: app
-    uri: https://github.com/your-org/your-template.git
+    uri: https://github.com/acme/app-template.git
+    parts: [base, ci, docs]
     vars:
-      project: My Awesome Project
-      author: Jane Doe
-      email: jane@example.com
-      entity: Settings
+      project: hello-cli
+      module: example.com/hello-cli
+      author: Acme Inc.
 ```
 
-#### Fields:
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `id` | no | Short name used by `sombra local update`. Unique in the file. |
+| `uri` | yes | Git repository URL or local path. |
+| `path` | no | Destination subdirectory for the whole template. |
+| `parts` | no | Parts to apply. Defaults to `[base]` when omitted or empty. |
+| `vars` | yes | Values bound to the template. |
 
-* `id`: Optional short name for the template. Unique within the file. Used to target one template in `sombra local update`
-* `uri`: The Git repository URL (or local path) of the template
-* `path`: Optional subdirectory of the target project where the template is applied
-* `current`: The version (Git tag) currently applied; written by `sombra`
-* `vars`: Key-value pairs that are injected into the template
+`id` allows letters, numbers, underscores and dashes. When omitted,
+`sombra local init` derives it from the repository name. A collision gets a numeric
+suffix.
 
-`id` only allows letters, numbers, underscores, and dashes. When you do not
-provide one, `sombra local init` derives it from the repository name. If that name
-is already taken, a numeric suffix is appended (`your-template-2`, `your-template-3`,
-and so on).
+`sombra local update` accepts an `id` or a `uri`. It matches `id` first and falls back
+to `uri`.
 
-`sombra local update` accepts either an `id` or a `uri`. It matches `id` first and
-falls back to `uri`, so projects created before `id` existed keep working.
-
-`current` is updated automatically when `sombra local update` succeeds. It lets a project record which template version it was generated from.
+Unknown fields are errors.
 
 ---
 
-## Full Example
+## Parts
 
-```yaml
-templates:
-  - id: app
-    uri: https://github.com/your-org/your-template.git
-    current: v1.2.0
-    vars:
-      project: Internal API
-      author: Dev Team
-      email: dev@example.com
-      entity: Config
-  - id: common-ci
-    uri: https://github.com/your-org/common-ci.git
-    path: .ci
-    vars:
-      project: Internal API
-```
-
----
-
-## Creating and Applying the File
-
-Register a template (creates `sombra.yaml` if missing and prompts for its variables):
+Every template declares a required `base` part and may declare more. `base` is selected
+when `parts` is omitted or empty. Selecting parts records them in `sombra.yaml`:
 
 ```bash
-sombra local init https://github.com/your-org/your-template.git --id app
+sombra local init https://github.com/acme/app-template.git --with base,ci,docs
 ```
 
-Apply or refresh the registered template by id or URI:
+`--with` replaces the selection. `base` is only selected when named. For example,
+`--with ci` copies `ci` files only.
+
+Later updates use the stored selection:
 
 ```bash
 sombra local update app
 ```
 
-For more, check out the [CLI Commands](commands.md) or [Installation Guide](../getting-started/installation.md).
+Replace the selection with `--with`:
+
+```bash
+sombra local update app --with ci
+sombra local update app --with base,ci
+sombra local update app --with ''
+```
+
+An empty value resets the selection to `base`.
+
+Dropping a part does not delete files immediately. Run `--prune` to remove files that
+are unmodified. Modified files are reported and kept.
+
+---
+
+## Multiple Templates
+
+```yaml
+templates:
+  - id: app
+    uri: https://github.com/acme/app-template.git
+    parts: [base]
+    vars:
+      project: Internal API
+  - id: common-ci
+    uri: https://github.com/acme/common-ci.git
+    parts: [ci]
+    vars:
+      owner: platform
+```
+
+Each template contributes only its selected parts. In this example, `common-ci` copies
+its `ci` part and not its `base` part. That keeps shared base files from colliding.
+
+The same destination cannot be owned by two templates. The update fails if it detects
+a collision.
+
+---
+
+## The Applied Version
+
+The version is recorded in `.sombra/lock.yaml`:
+
+```yaml
+lock: 1
+templates:
+  app:
+    version: v1.2.0
+    parts: [base, ci]
+    files:
+      /Makefile:
+        hash: sha256:...
+        mode: sync
+        source: /Makefile
+```
+
+`sombra.yaml` does not contain a `current` field. Use `--tag` to pin a version in a
+specific update.
+
+---
+
+## Creating and Applying the File
+
+Register a template:
+
+```bash
+sombra local init https://github.com/acme/app-template.git --id app --with base,ci
+```
+
+Apply or refresh it:
+
+```bash
+sombra local update app
+```
+
+For every option, see [CLI Commands](commands.md).

@@ -7,118 +7,139 @@ aliases:
 
 ## Best Practices for Creating Templates
 
-Follow these practices when you design a `.sombra/default.yaml`.
+Follow these practices when you design a `.sombra/template.yaml`.
 
 ---
 
-### 1. Keep Definitions Simple
+### 1. Curate the base part
 
-While `sombra-cli` supports Go templating and regex, complex logic increases the risk of errors and reduces maintainability.  
-Favor simple mappings and clear structure over clever or deeply nested patterns.
+List only the files that belong in a new project. Everything else stays in the source
+repository and is never copied.
 
----
-
-### 2. Separate Template Logic from Production Code
-
-Never modify production code just to turn it into a template.  
-Use abstract patterns and search/replace mappings instead — this keeps your codebase clean and reusable.
+Prefer explicit directories and files over broad patterns. `include` does not accept
+globs, so `parts.base.include` is the review surface: if a file is not listed, it cannot
+leak into a generated project.
 
 ---
 
-### 3. Use Abstract Patterns for Global Rules
+### 2. Default to seed for code the consumer will edit
 
-Use `abstract: true` patterns to define shared mappings that apply to multiple files:
+Use `mode: seed` for commands, domain types, composition roots and module files. Use
+the default `sync` for generated or shared scaffolding such as `Makefile`, `mk/` and
+CI configuration.
+
+A `seed` file is never overwritten. That protects the consumer's work.
+A `sync` file is updated only while it is unmodified, so edits still surface as
+conflicts instead of being lost.
+
+---
+
+### 3. Order rewrites from specific to general
+
+Rules run in order. Put the full module path first, then the repository slug, then the
+project name.
 
 ```yaml
-- pattern: "*"
-  abstract: true
-  default:
-    my-app-template: "{{ .project }}"
+rewrites:
+  - find: "github.com/acme/app"
+    replace: "{{ .module }}"
+    in: [all]
+  - find: "app"
+    as: word
+    replace: "{{ .project }}"
+    in: [all]
 ```
 
-This centralizes your replacements and avoids repetition.
+Use `as: word` for short identifiers. It avoids changing derived names by accident.
 
 ---
 
-### 4. Add Comments for Context
+### 4. Scope rewrites to files
 
-Document your mappings so others (or future-you) understand why replacements exist.
+A global rule is convenient, but a scoped rule is safer. Use `files` to limit a rule
+to the files where the text means the same thing.
 
 ```yaml
-default:
-  my-app-template: "{{ .project }}"  # Replace project name in path/content
+- files: [/internal/core/entities/app.go]
+  find: "app.go"
+  replace: "entities.go"
+  in: [name]
 ```
 
 ---
 
-### 5. Favor Explicit File Scoping
+### 5. Use overlays for whole-file differences
 
-Instead of using `*`, prefer more specific glob patterns when possible:
-
-```yaml
-- pattern: config/**/*.yaml
-- pattern: README.md
-```
-
-This improves performance and reduces accidental replacements.
-
----
-
-### 6. Use Semantic Versioning in Template Repos
-
-Tag your template repositories with semantic version tags (`v1.0.0`, `v1.1.0`, etc.).
-This enables consumers to pin and upgrade templates predictably. Consumers select a
-version with `sombra local update --tag v1.0.0` (or fall back to the latest tag), and the
-applied version is recorded in the target's `sombra.yaml`:
-
-```yaml
-templates:
-  - uri: https://github.com/your-org/your-template.git
-    current: v1.0.0
-```
-
----
-
-### 7. Test Template Behavior in a Sandbox
-
-Use a throwaway repo or directory to validate your template results.
-Run:
-
-```bash
-sombra local init https://github.com/your-org/your-template.git
-```
-
-Verify filenames, paths, and content transformations behave as expected before releasing.
-
----
-
-### 8. Commit `.sombra/` Separately
-
-Treat template definition files like infrastructure. Commit changes separately from feature code to make diffs easier to review.
-
----
-
-### 9. Hide Template-Only Content with Block Directives
-
-A template repository is also a working project, so it often contains content that should
-not be copied into generated projects. Wrap those regions with `sombra:skip` / `sombra:end`
-and enable `block_directives` on the owning pattern instead of deleting the code or
-relying on fragile regexes:
-
-```yaml
-- pattern: "/cmd/sombra/main.go"
-  block_directives: true
-```
+When a file must be much smaller in generated projects, keep the full file in the
+repository and put the reduced version under `.sombra/overlay/`.
 
 ```text
-# sombra:skip
-templateOnly := true
-# sombra:end
+.sombra/overlay/README.md
 ```
 
-This keeps the source repository runnable while producing a lean project. The markers
-must be balanced or the copy fails with the offending line number.
+Overlays keep the diff obvious and avoid fragile regexes.
 
 ---
 
-For hands-on examples, visit [Start a Template](start-a-template.md).
+### 6. Use directives for small regions
+
+Wrap template-only code in `sombra:skip` and `sombra:end` markers and enable
+`directives: true` on the owning entry.
+
+Keep the markers out of pages that are copied and that document the marker syntax.
+Those files need `directives` disabled or an overlay.
+
+---
+
+### 7. Move optional trees into parts
+
+CI, docs and QA are good part candidates. Parts keep the base small and make the
+consumer's choice explicit. Every definition still needs a `base` part, but it may be
+empty.
+
+Name parts after the capability, not the directory. Write a description. Consumers see
+it in `local init` and `local update` errors.
+
+Parts are flat. To compose several templates, select parts from each in the target's
+`sombra.yaml`.
+
+---
+
+### 8. Test both a fresh and an existing project
+
+Test twice:
+
+1. An empty directory. Every file is created.
+2. A directory with an edited `sync` file. The update reports a conflict.
+
+Also test a dropped part with and without `--prune`.
+
+---
+
+### 9. Commit the definition and the lock
+
+Commit `.sombra/template.yaml` in the template repository. Commit `.sombra/lock.yaml`
+in each consumer project. The lock is how updates distinguish an untouched file from
+an edited one.
+
+Do not edit the lock by hand.
+
+---
+
+### 10. Tag releases
+
+Use semantic tags (`v1.0.0`, `v1.1.0`). Consumers can pin a tag with
+`--tag`, or use the latest tag by default.
+
+---
+
+### 11. Keep the source repository working
+
+A template repository is also a normal project. Do not break it to satisfy the
+template definition. Use overlays and directives to keep template-only content out of
+the generated result.
+
+---
+
+For a walkthrough, see [Start a Template](start-a-template.md). For the full
+reference, see [Template Concepts](concepts.md).

@@ -1,27 +1,21 @@
 package usecases
 
-import (
-	"github.com/yunier-rojas/sombra-cli/internal/core/entities"
-)
+import "github.com/yunier-rojas/sombra-cli/internal/core/entities"
 
 type CliTemplateInitCase interface {
-	DoTemplateInit(templateDir string, only []string, exclude []string) error
+	DoTemplateInit(dir string, opts entities.TemplateInitOptions) (*entities.TemplateInitResult, error)
 }
 
 type CliTemplateInitInteractor struct {
 	templateCase TemplateInitCase
 }
 
-func (l *CliTemplateInitInteractor) DoTemplateInit(templateDir string, only []string, exclude []string) error {
-	err := l.templateCase.TemplateInit(templateDir, entities.ConvertToWildcards(only), entities.ConvertToWildcards(exclude))
-	if err != nil {
-		return err
-	}
-	return nil
+func (l *CliTemplateInitInteractor) DoTemplateInit(dir string, opts entities.TemplateInitOptions) (*entities.TemplateInitResult, error) {
+	return l.templateCase.TemplateInit(dir, opts)
 }
 
-func NewCliTemplateInitInteractor(templateEngine TemplateInitCase) *CliTemplateInitInteractor {
-	return &CliTemplateInitInteractor{templateCase: templateEngine}
+func NewCliTemplateInitInteractor(templateCase TemplateInitCase) *CliTemplateInitInteractor {
+	return &CliTemplateInitInteractor{templateCase: templateCase}
 }
 
 var _ CliTemplateInitCase = (*CliTemplateInitInteractor)(nil)

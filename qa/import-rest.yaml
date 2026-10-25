@@ -1,0 +1,225 @@
+imports-checks:
+  # __MODULE__ is replaced by qa/check-imports.sh with the value of `go list -m`.
+  # NOTE: for some reason, `prefix` is not working in rules
+
+  - folder: cmd/sombra
+    rules:
+      - allow:
+          # stdlib
+          - errors
+          - fmt
+          - os
+          - strings
+
+          # 3rd party
+          - github.com/alexflint/go-arg
+
+          # sombra
+          - __MODULE__/internal/core/entities
+          - __MODULE__/internal/runtime
+          - __MODULE__/internal/frameworks/logger
+
+  - folder: internal/frameworks/cvs
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # sombra
+          - __MODULE__/internal/core/usecases
+          - __MODULE__/internal/frameworks/cvs/git
+          - __MODULE__/internal/frameworks/logger
+
+  - folder: internal/frameworks/cvs/git
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - bytes
+          - fmt
+          - os
+          - os/exec
+          - path/filepath
+          - strings
+
+          # 3rd party
+          - github.com/google/uuid
+
+          # sombra
+          - __MODULE__/internal/core/entities
+          - __MODULE__/internal/core/usecases
+          - __MODULE__/internal/frameworks/logger
+
+  - folder: internal/frameworks/files
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - crypto/sha256
+          - encoding/hex
+          - fmt
+          - io/fs
+          - os
+          - path
+          - path/filepath
+          - sort
+          - strings
+
+          # 3rd party
+          - github.com/bmatcuk/doublestar/v4
+
+          # sombra
+          - __MODULE__/internal/core/entities
+          - __MODULE__/internal/core/usecases
+
+  - folder: internal/frameworks/lock
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - bytes
+          - fmt
+          - os
+          - path/filepath
+
+          # 3rd party
+          - gopkg.in/yaml.v3
+
+          # sombra
+          - __MODULE__/internal/core/entities
+          - __MODULE__/internal/core/usecases
+
+  - folder: internal/frameworks/logger
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - os
+          - time
+
+          # 3rd party
+          - github.com/rs/zerolog
+          - github.com/rs/zerolog/log
+          - github.com/rs/zerolog/pkgerrors
+
+  - folder: internal/frameworks/sombra
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - bytes
+          - encoding/json
+          - fmt
+          - os
+          - path/filepath
+          - regexp
+          - strconv
+          - strings
+
+          # 3rd party
+          - gopkg.in/yaml.v3
+
+          # sombra
+          - __MODULE__/internal/core/entities
+          - __MODULE__/internal/core/usecases
+          - __MODULE__/internal/frameworks/sombra/directives
+
+  - folder: internal/frameworks/sombra/directives
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - fmt
+          - regexp
+          - strings
+
+  - folder: internal/frameworks/templates
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - bytes
+          - fmt
+          - os
+          - path/filepath
+          - regexp
+          - strings
+          - text/template
+
+          # 3rd party
+          - github.com/Masterminds/sprig/v3
+          - github.com/bmatcuk/doublestar/v4
+          - gopkg.in/yaml.v3
+
+          # sombra
+          - __MODULE__/internal/core/entities
+          - __MODULE__/internal/core/usecases
+
+  - folder: internal/frameworks/vars
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - bufio
+          - errors
+          - fmt
+          - io
+          - os
+          - strings
+
+          # sombra
+          - __MODULE__/internal/core/entities
+          - __MODULE__/internal/core/usecases
+
+  - folder: internal/frameworks/versions
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - sort
+
+          # 3rd party
+          - github.com/Masterminds/semver/v3
+
+          # sombra
+          - __MODULE__/internal/core/entities
+          - __MODULE__/internal/core/usecases
+          - __MODULE__/internal/frameworks/logger
+
+  - folder: internal/frameworks/workspace
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # stdlib
+          - bufio
+          - fmt
+          - os
+          - os/exec
+          - path/filepath
+          - sort
+          - strings
+
+          # sombra
+          - __MODULE__/internal/core/entities
+          - __MODULE__/internal/core/usecases
+
+  - folder: internal/runtime
+    exclude:
+      - ".*_test\\.go"
+    rules:
+      - allow:
+          # 3rd party
+          - go.uber.org/dig
+
+          # sombra
+          - __MODULE__/internal/core/usecases
+          - __MODULE__/internal/frameworks/*

@@ -1,0 +1,24 @@
+id: error-wrap-with-w
+language: go
+severity: error
+message: Wrap errors with %w.
+files:
+  - internal/**/*.go
+  - cmd/**/*.go
+ignores:
+  - "**/*_test.go"
+metadata:
+  adr: adr/technical/2026-10-02-error-handling.md
+rule:
+  kind: call_expression
+  all:
+    - has:
+        field: function
+        pattern: fmt.Errorf
+    - has:
+        kind: identifier
+        regex: '^(err|Err[A-Za-z0-9_]*)$'
+    - not:
+        has:
+          kind: interpreted_string_literal
+          regex: '%w'

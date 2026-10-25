@@ -1,0 +1,16 @@
+id: interface-max-three-methods
+language: go
+severity: error
+message: Interfaces must declare at most three methods directly.
+files:
+  - internal/**/*.go
+  - cmd/**/*.go
+ignores:
+  - "**/*_test.go"
+metadata:
+  adr: adr/technical/2026-10-02-code-shape.md
+rule:
+  kind: interface_type
+  has:
+    kind: method_elem
+    nthChild: 4

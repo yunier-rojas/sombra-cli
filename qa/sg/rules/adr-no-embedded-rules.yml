@@ -1,0 +1,17 @@
+id: adr-no-embedded-rules
+language: markdown
+severity: error
+message: Do not write ast-grep rules inside an ADR.
+files:
+  - adr/**/*.md
+metadata:
+  adr: adr/process/2026-10-01-document-decisions-as-adrs.md
+rule:
+  kind: fenced_code_block
+  all:
+    - has:
+        kind: info_string
+        regex: 'ya?ml'
+    - has:
+        kind: code_fence_content
+        regex: '(?s)id:.*language:.*rule:'

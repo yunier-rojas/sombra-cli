@@ -8,7 +8,7 @@ description: Automate software setup with sombra-cli templates.
 ## What is `sombra-cli`?
 
 `sombra-cli` is an open-source tool that generates projects from templates stored in Git repositories.  
-A template is a real repository plus a `.sombra/default.yaml` file with transformation rules, so converting a repository does not change its code.
+A template is a real repository plus a `.sombra/template.yaml` file with selection and rewrite rules, so converting a repository does not change its code.
 
 ## Why `sombra-cli`?
 

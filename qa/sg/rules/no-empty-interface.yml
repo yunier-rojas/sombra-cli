@@ -1,0 +1,14 @@
+id: no-empty-interface
+language: go
+severity: error
+message: Use any instead of interface{}.
+files:
+  - internal/**/*.go
+  - cmd/**/*.go
+ignores:
+  - "**/*_test.go"
+metadata:
+  adr: adr/technical/2026-10-02-modern-stdlib.md
+rule:
+  kind: interface_type
+  regex: 'interface\s*\{\s*\}'

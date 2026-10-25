@@ -20,6 +20,9 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: Install ast-grep
+        run: npm install -g @ast-grep/cli
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
@@ -27,6 +30,18 @@ jobs:
 
       - name: Check import rules
         run: make imports
+
+      - name: Check ast-grep rules
+        run: make lint-sg
+
+      - name: Check use case contracts
+        run: make lint-usecases
+
+      - name: Check third-party ownership
+        run: make lint-third-party
+
+      - name: Check ADR rules
+        run: make lint-adr
 
   test:
     runs-on: ubuntu-latest

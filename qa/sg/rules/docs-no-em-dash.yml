@@ -1,0 +1,12 @@
+id: docs-no-em-dash
+language: markdown
+severity: error
+message: Do not use the em dash character in docs.
+files:
+  - docs/content/**/*.md
+  - www/content/**/*.md
+metadata:
+  adr: adr/technical/2026-10-02-docs-typography.md
+rule:
+  kind: document
+  regex: '—'

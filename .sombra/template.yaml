@@ -1,0 +1,129 @@
+schema: 2
+
+vars:
+  project:
+    description: Project and command name
+    default: app
+  module:
+    description: Go module path
+    default: example.com/app
+  repository:
+    description: Repository slug, usually owner/repo
+    default: example/app
+  github_user:
+    description: GitHub user or organization
+    default: example
+  author:
+    description: Author name
+    default: Your Name
+
+parts:
+  base:
+    description: Core project files
+    include:
+      - /Makefile
+      - /.editorconfig
+      - /.gitignore
+      - /LICENSE
+      - /README.md
+      - /AGENTS.md
+      - path: /opencode.jsonc
+        mode: seed
+      - path: /go.mod
+        mode: seed
+      - path: /go.sum
+        mode: seed
+        rewrite: false
+
+      - /mk/.gitignore
+      - /mk/build.mk
+      - /mk/test.mk
+
+      - path: /cmd/sombra/main.go
+        mode: seed
+        directives: true
+      - path: /cmd/sombra/cmd_version.go
+        mode: seed
+      - path: /internal/core/usecases/cli_version.go
+        mode: seed
+      - path: /internal/runtime/version.go
+        mode: seed
+      - path: /internal/core/entities/sombra_entities.go
+        mode: seed
+        directives: true
+      - path: /internal/frameworks/logger/logger.go
+        mode: seed
+      - path: /internal/runtime/container.go
+        mode: seed
+        directives: true
+
+  ci:
+    description: GitHub Actions workflows
+    include:
+      - /.github/
+  docs:
+    description: Hugo documentation site
+    include:
+      - path: /docs/hugo.toml
+        directives: true
+      - /docs/i18n/
+      - /docs/layouts/
+      - path: /docs/go.mod
+        mode: seed
+      - path: /docs/go.sum
+        mode: seed
+        rewrite: false
+      - path: /docs/content/_index.md
+        directives: true
+      - path: /docs/content/about.md
+        directives: true
+      - path: /docs/content/contact.md
+        directives: true
+      - /mk/docs.mk
+  qa:
+    description: QA rules, ast-grep rules, ADRs and ADR checks
+    include:
+      - /adr/
+      - /qa/
+      - /sgconfig.yml
+      - /mk/adr.mk
+      - /mk/qa.mk
+
+exclude:
+  - "**/*_test.go"
+
+rewrites:
+  - find: "github.com/yunier-rojas/sombra-cli"
+    replace: "{{ .module }}"
+    in: [all]
+
+  - find: "yunier-rojas/sombra-cli"
+    replace: "{{ .repository }}"
+    in: [all]
+
+  - find: "sombra-cli"
+    replace: "{{ .project }}"
+    in: [all]
+
+  - find: "sombra-"
+    replace: "{{ .project }}-"
+    in: [content]
+
+  - find: "yunier-rojas"
+    replace: "{{ .github_user }}"
+    in: [all]
+
+  - find: "Yunier Rojas García"
+    replace: "{{ .author }}"
+    in: [all]
+
+  - find: "sombra"
+    as: word
+    ignore_case: true
+    replace: "{{ .project }}"
+    in: [all]
+
+  - files: [/internal/core/entities/sombra_entities.go]
+    find: "sombra_entities.go"
+    replace: "entities.go"
+    in: [name]
